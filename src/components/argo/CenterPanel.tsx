@@ -795,12 +795,9 @@ function SpaceWorkspaceView() {
               <div className="flex items-center gap-2">
                 <h1 className="text-lg font-semibold text-foreground tracking-tight">{space.name}</h1>
                 <span className="text-sm text-muted-foreground">•</span>
-                {isShared ? <Globe className="w-3.5 h-3.5 text-muted-foreground" /> : <Lock className="w-3.5 h-3.5 text-muted-foreground" />}
-                {isOwner && !space.isDefault && (
-                  <button onClick={() => { setEditName(space.name); setEditDescription(space.description || ''); setEditContext(space.projectContext || ''); setEditing(true); }} className="p-1 rounded hover:bg-accent text-muted-foreground hover:text-foreground transition-colors" title="Edit project">
-                    <Pencil className="w-3.5 h-3.5" />
-                  </button>
-                )}
+                {isShared
+                  ? <Globe className="w-3.5 h-3.5 text-muted-foreground" title="Shared project" />
+                  : <Lock className="w-3.5 h-3.5 text-muted-foreground" title="Private project" />}
               </div>
               {isShared && space.sharedBy && (
                 <p className="text-xs text-muted-foreground mt-1">Shared by {space.sharedBy}</p>
@@ -814,6 +811,7 @@ function SpaceWorkspaceView() {
             <div className="relative">
               <button
                 onClick={() => setShowShareMenu(!showShareMenu)}
+                title="Share this project with team members"
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border text-sm text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
               >
                 <Share2 className="w-3.5 h-3.5" />
@@ -869,6 +867,7 @@ function SpaceWorkspaceView() {
           {!space.isDefault && (
             <button
               onClick={() => openFilesPanel(activeSpaceId)}
+              title="View project files"
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border text-sm text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
             >
               <FileText className="w-3.5 h-3.5" />
@@ -877,11 +876,27 @@ function SpaceWorkspaceView() {
           )}
           <button
             onClick={() => createChat('New Chat', activeSpaceId)}
+            title="Start a new chat in this project"
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
           >
             <Plus className="w-3.5 h-3.5" />
             New Chat
           </button>
+          {isOwner && !space.isDefault && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="p-2 rounded-lg border border-border text-muted-foreground hover:text-foreground hover:bg-accent transition-colors" title="More options">
+                  <MoreVertical className="w-3.5 h-3.5" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-40">
+                <DropdownMenuItem onClick={() => { setEditName(space.name); setEditDescription(space.description || ''); setEditContext(space.projectContext || ''); setEditing(true); }}>
+                  <Pencil className="w-3.5 h-3.5 mr-2" />
+                  Edit project
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </div>
       </div>
 

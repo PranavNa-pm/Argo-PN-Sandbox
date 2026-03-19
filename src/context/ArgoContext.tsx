@@ -374,7 +374,7 @@ export function ArgoProvider({ children }: { children: ReactNode }) {
     { id: 'space-1', name: 'Client Name 1', description: 'Pre-sales materials and proposals for active client engagements.', visibility: 'private', owner: 'You', createdAt: new Date('2025-01-15') },
     { id: 'space-2', name: 'Client Name 2 Proposal', description: 'Competitive analysis and market research for Q1 planning.', visibility: 'shared', owner: 'Sarah Chen', sharedBy: 'Sarah Chen', createdAt: new Date('2025-02-01') },
     { id: 'space-3', name: 'Client Name 3', description: 'Enterprise migration project for Client Name 3.', visibility: 'shared', owner: 'You', createdAt: new Date('2025-03-01') },
-    { id: 'space-4', name: 'Internal Operations 2025', description: 'Process improvements and tooling for internal teams.', visibility: 'private', owner: 'James Wilson', createdAt: new Date('2025-03-15') },
+    { id: 'space-4', name: 'Internal Operations 2025', description: 'Process improvements and tooling for internal teams.', visibility: 'shared', owner: 'James Wilson', sharedBy: 'James Wilson', createdAt: new Date('2025-03-15') },
   ]);
   const [activeSpaceId, setActiveSpaceId] = useState<string>(MY_SPACE_ID);
   const [chats, setChats] = useState<Chat[]>([
