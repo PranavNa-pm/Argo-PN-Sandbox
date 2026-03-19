@@ -4,7 +4,7 @@ import {
   Plus, MessageSquare, Search, SquarePen,
   Settings, Bot, BookOpen, Users,
   PanelLeftClose, PanelLeft, ChevronDown, ChevronRight, MoreHorizontal,
-  FolderOpen, Archive, LogOut, Globe, Lock
+  FolderOpen, Folders, Layers, LogOut, Globe, Lock, MessagesSquare
 } from 'lucide-react';
 import { useArgo } from '@/context/ArgoContext';
 import { cn } from '@/lib/utils';
@@ -178,12 +178,6 @@ export function LeftPanel() {
     createChat('New Chat', generalChatSpace?.id || 'space-my');
   };
 
-  const handleSearchClick = () => {
-    if (sidebarCollapsed) {
-      setSidebarCollapsed(false);
-    }
-  };
-
   const handleOpenConfig = (tab: 'agents' | 'prompts' | 'groups') => {
     setCenterView('config');
     setAdminTab(tab);
@@ -199,6 +193,7 @@ export function LeftPanel() {
     );
   }
 
+  // ─── Collapsed sidebar: clean, empty — just expand + user ───
   if (sidebarCollapsed) {
     return (
       <div className="h-screen flex flex-col items-center bg-sidebar panel-border-right py-3 gap-1 w-full">
@@ -209,12 +204,6 @@ export function LeftPanel() {
         >
           <PanelLeft className="w-4 h-4" />
         </button>
-        <button onClick={handleNewChat} className="p-2 rounded-md hover:bg-accent text-muted-foreground hover:text-foreground transition-colors" title="New Chat">
-          <SquarePen className="w-4 h-4" />
-        </button>
-        <button onClick={handleSearchClick} className="p-2 rounded-md hover:bg-accent text-muted-foreground hover:text-foreground transition-colors" title="Search">
-          <Search className="w-4 h-4" />
-        </button>
         <div className="flex-1" />
         <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center cursor-pointer" title={`${MOCK_USER.firstName} ${MOCK_USER.lastName}`}>
           <span className="text-[10px] font-bold text-primary-foreground">{MOCK_USER.firstName[0]}{MOCK_USER.lastName[0]}</span>
@@ -223,9 +212,11 @@ export function LeftPanel() {
     );
   }
 
+  const visibleGeneralChats = generalChatChats.filter(c => c.messages.length > 0);
+
   return (
     <div className="h-screen flex flex-col bg-sidebar overflow-hidden panel-border-right">
-      {/* Header */}
+      {/* Header with logo */}
       <div className="px-4 py-3.5 border-b border-sidebar-border flex items-center justify-between">
         <div className="flex items-center gap-2">
           <img src={argoLogo} alt="ARGO" className="h-3 w-auto" />
@@ -235,15 +226,28 @@ export function LeftPanel() {
         </button>
       </div>
 
-      {/* ═══ Zone 1: Actions ═══ */}
+      {/* ═══ Zone 1: New Chat + Search ═══ */}
       <div className="px-3 pt-3 pb-2 space-y-1.5">
+        {/* New Chat — text link style, not button */}
         <button
           onClick={handleNewChat}
-          className="w-full flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors"
+          className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-sidebar-foreground hover:bg-accent/60 transition-colors"
         >
           <Plus className="w-3.5 h-3.5" />
-          New Chat
+          <span className="font-medium">New Chat</span>
         </button>
+
+        {/* Search */}
+        <div className="flex items-center gap-2 px-3 py-2 bg-secondary/50 border border-border rounded-lg">
+          <Search className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+          <input
+            value={searchQuery}
+            onChange={e => { setSearchQuery(e.target.value); setSearchFocusedIdx(-1); }}
+            onKeyDown={handleSearchKeyDown}
+            placeholder="Search"
+            className="flex-1 text-sm bg-transparent text-foreground placeholder:text-muted-foreground focus:outline-none"
+          />
+        </div>
       </div>
 
       {/* Zone divider */}
@@ -252,19 +256,6 @@ export function LeftPanel() {
       {/* ═══ Zone 2: Navigation ═══ */}
       <div className="flex-1 overflow-y-auto argo-scrollbar">
         <div className="px-2 pt-2.5 pb-1 space-y-0.5">
-          {/* Search */}
-          <div className="px-1 pb-2">
-            <div className="flex items-center gap-2 px-3 py-2 bg-secondary/50 border border-border rounded-lg">
-              <Search className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-              <input
-                value={searchQuery}
-                onChange={e => { setSearchQuery(e.target.value); setSearchFocusedIdx(-1); }}
-                onKeyDown={handleSearchKeyDown}
-                placeholder="Search projects & chats..."
-                className="flex-1 text-sm bg-transparent text-foreground placeholder:text-muted-foreground focus:outline-none"
-              />
-            </div>
-          </div>
 
           {/* Search results */}
           {searchQuery && searchResults ? (
@@ -320,7 +311,7 @@ export function LeftPanel() {
             </div>
           ) : (
             <>
-              {/* Projects */}
+              {/* Projects (plural — multi-folder icon) */}
               <button
                 onClick={() => {
                   setCenterView('projects');
@@ -334,7 +325,7 @@ export function LeftPanel() {
                     : "text-sidebar-foreground hover:bg-accent/60"
                 )}
               >
-                <FolderOpen className="w-3.5 h-3.5" />
+                <Folders className="w-3.5 h-3.5" />
                 <span>Projects</span>
               </button>
 
@@ -352,7 +343,7 @@ export function LeftPanel() {
                     : "text-sidebar-foreground hover:bg-accent/60"
                 )}
               >
-                <Archive className="w-3.5 h-3.5" />
+                <Layers className="w-3.5 h-3.5" />
                 <span>Artifacts</span>
               </button>
 
@@ -385,7 +376,7 @@ export function LeftPanel() {
                             >
                               <FolderOpen className="w-3.5 h-3.5 shrink-0" />
                               <span className="truncate font-medium flex-1 min-w-0">{project.name}</span>
-                              {project.visibility === 'shared' ? <Globe className="w-3.5 h-3.5 text-muted-foreground shrink-0 ml-auto" /> : <Lock className="w-3.5 h-3.5 text-muted-foreground shrink-0 ml-auto" />}
+                              {project.visibility === 'shared' ? <Globe className="w-3 h-3 text-muted-foreground shrink-0 ml-auto" /> : <Lock className="w-3 h-3 text-muted-foreground shrink-0 ml-auto" />}
                             </button>
                             <button
                               onClick={(e) => {
@@ -400,7 +391,7 @@ export function LeftPanel() {
                           </div>
                           {/* Accordion: show chats when this project is active */}
                           {isActiveProject && projectChats.length > 0 && (
-                            <div className="ml-4 space-y-0.5 mt-0.5 pl-3">
+                            <div className="ml-7 space-y-0.5 mt-0.5">
                               {projectChats.slice(0, 5).map(c => (
                                 <div key={c.id} className="relative group/chat flex items-center">
                                   {renamingChatId === c.id ? (
@@ -462,7 +453,7 @@ export function LeftPanel() {
                                   onClick={() => openSpaceWorkspace(project.id)}
                                   className="w-full px-2 py-1 text-[11px] text-muted-foreground hover:text-foreground transition-colors text-left"
                                 >
-                                  View More ({projectChats.length - 5})
+                                  View more ({projectChats.length - 5})
                                 </button>
                               )}
                             </div>
@@ -477,7 +468,7 @@ export function LeftPanel() {
               {/* Zone divider */}
               {generalChatSpace && <div className="mx-1 my-2 border-t border-border" />}
 
-              {/* ── General Chat Section ── */}
+              {/* ── General Chat Section (MessagesSquare icon) ── */}
               {generalChatSpace && (
                 <div className="mb-1">
                   <div className="flex items-center group">
@@ -490,6 +481,7 @@ export function LeftPanel() {
                           : "text-sidebar-foreground hover:bg-accent/60"
                       )}
                     >
+                      <MessagesSquare className="w-3.5 h-3.5 shrink-0" />
                       <span className="truncate flex-1 font-medium">General Chat</span>
                     </button>
                     <button
@@ -503,11 +495,12 @@ export function LeftPanel() {
                       <Plus className="w-3 h-3" />
                     </button>
                   </div>
-                  <div className="ml-4 space-y-0.5 mt-0.5 pl-3">
-                    {generalChatChats.filter(c => c.messages.length > 0).length === 0 && (
+
+                  <div className="ml-7 space-y-0.5 mt-0.5">
+                    {visibleGeneralChats.length === 0 && (
                       <div className="text-xs text-muted-foreground py-1.5 px-2">No chats</div>
                     )}
-                    {generalChatChats.filter(c => c.messages.length > 0).slice(0, generalChatDisplayCount).map(c => (
+                    {visibleGeneralChats.slice(0, generalChatDisplayCount).map(c => (
                       <div key={c.id} className="relative group/chat flex items-center">
                         {renamingChatId === c.id ? (
                           <div className="w-full px-1 py-0.5">
@@ -563,12 +556,12 @@ export function LeftPanel() {
                         )}
                       </div>
                     ))}
-                    {generalChatChats.filter(c => c.messages.length > 0).length > generalChatDisplayCount && (
+                    {visibleGeneralChats.length > generalChatDisplayCount && (
                       <button
                         onClick={() => openSpaceWorkspace(generalChatSpace!.id)}
                         className="w-full px-2 py-1 text-[11px] text-muted-foreground hover:text-foreground transition-colors text-left"
                       >
-                        View more ({generalChatChats.filter(c => c.messages.length > 0).length - generalChatDisplayCount})
+                        View more ({visibleGeneralChats.length - generalChatDisplayCount})
                       </button>
                     )}
                   </div>

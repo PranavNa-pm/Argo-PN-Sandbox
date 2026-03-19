@@ -9,6 +9,7 @@ import {
   FileSignature, Table2, ScrollText, AlertCircle
 } from 'lucide-react';
 import { useArgo, AGENTS, TOOLS } from '@/context/ArgoContext';
+import argoLogo from '@/assets/argo-logo.svg';
 import { cn } from '@/lib/utils';
 import type { AdminTab } from '@/types/argo';
 import {
@@ -571,26 +572,30 @@ function ArtifactsTable() {
     return () => observer.disconnect();
   }, [filtered.length, displayCount]);
 
+  const totalArtifacts = allArtifacts.length;
+  const isFiltered = artifactSearch || contextFilter !== 'all';
+
   return (
     <div className="w-full p-6 animate-fade-in">
       <div className="max-w-4xl mx-auto space-y-5">
         <div>
-          <h2 className="text-lg font-semibold text-foreground tracking-tight">Artifacts ({filtered.length})</h2>
+          <h2 className="text-lg font-semibold text-foreground tracking-tight">Artifacts</h2>
           <p className="text-sm text-muted-foreground mt-1">All artifacts across your projects.</p>
         </div>
 
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 px-3 py-2 bg-secondary/50 border border-border rounded-lg flex-1">
-            <Search className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-            <input
-              value={artifactSearch}
-              onChange={e => { setArtifactSearch(e.target.value); setDisplayCount(20); }}
-              placeholder="Search artifacts..."
-              className="flex-1 text-sm bg-transparent text-foreground placeholder:text-muted-foreground focus:outline-none"
-            />
-          </div>
+        {/* Search bar — full width */}
+        <div className="flex items-center gap-2 px-3 py-2 bg-secondary/50 border border-border rounded-lg">
+          <Search className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+          <input
+            value={artifactSearch}
+            onChange={e => { setArtifactSearch(e.target.value); setDisplayCount(20); }}
+            placeholder="Search artifacts..."
+            className="flex-1 text-sm bg-transparent text-foreground placeholder:text-muted-foreground focus:outline-none"
+          />
+        </div>
 
-          {/* Context Filter - Inline tabs */}
+        {/* Filters row */}
+        <div className="flex items-center justify-between">
           <div className="flex items-center gap-1">
             {([{ key: 'all', label: 'All' }, { key: 'general-chat', label: 'General Chat' }, { key: 'projects', label: 'Projects' }] as const).map(f => (
               <button key={f.key} onClick={() => { setContextFilter(f.key as any); setDisplayCount(20); }}
@@ -601,22 +606,27 @@ function ArtifactsTable() {
               </button>
             ))}
           </div>
+          <span className="text-xs text-muted-foreground">
+            {isFiltered ? `Showing ${filtered.length} of ${totalArtifacts} artifacts` : `${totalArtifacts} artifacts`}
+          </span>
         </div>
 
-        {/* Sort headers */}
-        <div className="flex items-center gap-1 px-4">
-          {([
-            { field: 'name' as const, label: 'Name' },
-            { field: 'source' as const, label: 'Source' },
-            { field: 'type' as const, label: 'Type' },
-          ]).map(col => (
-            <button key={col.field}
-              onClick={() => { setSortField(col.field); setSortAsc(sortField === col.field ? !sortAsc : true); }}
-              className="text-xs text-muted-foreground hover:text-foreground transition-colors select-none flex items-center gap-1 mr-4">
-              {col.label}
-              {sortField === col.field && <span className="text-foreground">{sortAsc ? '↑' : '↓'}</span>}
+        {/* Sort headers — aligned to row layout */}
+        <div className="flex items-center gap-4 px-4">
+          <button
+            onClick={() => { setSortField('name'); setSortAsc(sortField === 'name' ? !sortAsc : true); }}
+            className="flex-1 text-[11px] font-medium text-foreground/60 hover:text-foreground transition-colors select-none flex items-center gap-1 text-left uppercase tracking-wide"
+          >
+            Name {sortField === 'name' && <span className="text-foreground">{sortAsc ? '↑' : '↓'}</span>}
+          </button>
+          <div className="flex items-center gap-3 shrink-0">
+            <button
+              onClick={() => { setSortField('type'); setSortAsc(sortField === 'type' ? !sortAsc : true); }}
+              className="text-[11px] font-medium text-foreground/60 hover:text-foreground transition-colors select-none flex items-center gap-1 w-24 uppercase tracking-wide"
+            >
+              Type {sortField === 'type' && <span className="text-foreground">{sortAsc ? '↑' : '↓'}</span>}
             </button>
-          ))}
+          </div>
         </div>
 
         {filtered.length === 0 ? (
@@ -683,6 +693,7 @@ function SpaceWorkspaceView() {
   const [showShareMenu, setShowShareMenu] = useState(false);
   const chatSentinelRef = useRef<HTMLDivElement>(null);
   const [shareSearch, setShareSearch] = useState('');
+  const [chatSearch, setChatSearch] = useState('');
   const isShared = space?.visibility === 'shared';
   const isOwner = space?.owner === 'You';
 
@@ -722,7 +733,6 @@ function SpaceWorkspaceView() {
       <div className="flex items-start justify-between">
         <div>
           <div className="flex items-center gap-2">
-            <FolderOpen className="w-4 h-4 text-primary" />
             {editing ? (
               <input
                 value={editName}
@@ -752,6 +762,13 @@ function SpaceWorkspaceView() {
           {space.description && <p className="text-sm text-muted-foreground mt-1">{space.description}</p>}
         </div>
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => createChat('New Chat', activeSpaceId)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            New Chat
+          </button>
           {!space.isDefault && (
             <button
               onClick={() => openFilesPanel(activeSpaceId)}
@@ -823,15 +840,13 @@ function SpaceWorkspaceView() {
       {/* Chats */}
       <div>
         <div className="flex items-center justify-between mb-3">
-          <h3 className="text-sm font-semibold text-foreground">Chats ({spaceChats.length})</h3>
-          <button
-            onClick={() => createChat('New Chat', activeSpaceId)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors"
-          >
-            <SquarePen className="w-3.5 h-3.5" />
-            New Chat
-          </button>
+          <h3 className="text-sm font-semibold text-foreground">Chats</h3>
+          <span className="text-xs text-muted-foreground">
+            {`${spaceChats.length} chats`}
+          </span>
         </div>
+
+
         {spaceChats.length === 0 ? (
           <div className="text-center py-8 animate-fade-in">
             <MessageSquare className="w-8 h-8 text-muted-foreground mx-auto mb-3" />
@@ -841,7 +856,9 @@ function SpaceWorkspaceView() {
         ) : (
           <>
             <div className="space-y-1">
-              {spaceChats.slice(0, chatDisplayCount).map(c => (
+              {spaceChats
+                .filter(c => !chatSearch || c.name.toLowerCase().includes(chatSearch.toLowerCase()))
+                .slice(0, chatDisplayCount).map(c => (
                 <div key={c.id} className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-secondary/30 transition-colors cursor-pointer group" onClick={() => handleOpenChat(c.id)}>
                   <div className="flex-1 min-w-0">
                     <div className="text-sm font-medium text-foreground">{c.name}</div>
@@ -1195,12 +1212,9 @@ function ChatView() {
       {activeChat && activeSpace && !activeSpace.isDefault && (
         <div className="border-b border-border px-4 py-3">
           <div className="max-w-4xl mx-auto">
-            <div className="text-xs text-muted-foreground mb-0.5">
-              Project: {activeSpace.name} <span className="mx-1">•</span>
-              <span className="inline-flex items-center gap-1 text-muted-foreground">
-                {activeSpace.visibility === 'shared' ? <Globe className="w-3.5 h-3.5" /> : <Lock className="w-3.5 h-3.5" />}
-                {activeSpace.visibility === 'shared' ? 'Shared' : 'Private'}
-              </span>
+            <div className="text-xs text-muted-foreground mb-0.5 flex items-center gap-1.5">
+              <span>Project: {activeSpace.name}</span>
+              {activeSpace.visibility === 'shared' ? <Globe className="w-3 h-3" /> : <Lock className="w-3 h-3" />}
             </div>
             <div className="text-sm font-semibold text-foreground">{activeChat.name}</div>
           </div>
@@ -1434,8 +1448,6 @@ function WorkspaceDashboard() {
       return true;
     });
 
-  const paginated = filtered.slice(0, projectDisplayCount);
-
   const filterLabels: Record<string, string> = {
     all: 'All',
     shared: 'Shared',
@@ -1452,24 +1464,51 @@ function WorkspaceDashboard() {
     return () => observer.disconnect();
   }, [filtered.length, projectDisplayCount]);
 
+  const [sortField, setSortField] = useState<'name' | 'owner' | 'date'>('date');
+  const [sortAsc, setSortAsc] = useState(false);
+
+  const totalProjects = otherProjects.length;
+  const isFiltered = search || filter !== 'all';
+
+  const sorted = [...filtered].sort((a, b) => {
+    const mul = sortAsc ? 1 : -1;
+    if (sortField === 'name') return mul * a.name.localeCompare(b.name);
+    if (sortField === 'owner') return mul * (a.owner || '').localeCompare(b.owner || '');
+    return mul * (a.createdAt.getTime() - b.createdAt.getTime());
+  });
+
+  const paginated = sorted.slice(0, projectDisplayCount);
+
   return (
     <div className="w-full p-6 animate-fade-in">
       <div className="max-w-4xl mx-auto space-y-5">
-        <div>
-          <h2 className="text-lg font-semibold text-foreground tracking-tight">Projects ({filtered.length})</h2>
-          <p className="text-sm text-muted-foreground mt-1">All projects assigned to you.</p>
+        <div className="flex items-start justify-between">
+          <div>
+            <h2 className="text-lg font-semibold text-foreground tracking-tight">Projects</h2>
+            <p className="text-sm text-muted-foreground mt-1">All projects assigned to you.</p>
+          </div>
+          <button
+            onClick={() => setCenterView('new-space')}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors shrink-0"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            Create Project
+          </button>
         </div>
 
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 px-3 py-2 bg-secondary/50 border border-border rounded-lg flex-1">
-            <Search className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-            <input
-              value={search}
-              onChange={e => { setSearch(e.target.value); setProjectDisplayCount(20); }}
-              placeholder="Search projects..."
-              className="flex-1 text-sm bg-transparent text-foreground placeholder:text-muted-foreground focus:outline-none"
-            />
-          </div>
+        {/* Search bar — full width */}
+        <div className="flex items-center gap-2 px-3 py-2 bg-secondary/50 border border-border rounded-lg">
+          <Search className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+          <input
+            value={search}
+            onChange={e => { setSearch(e.target.value); setProjectDisplayCount(20); }}
+            placeholder="Search projects..."
+            className="flex-1 text-sm bg-transparent text-foreground placeholder:text-muted-foreground focus:outline-none"
+          />
+        </div>
+
+        {/* Filters + Create + Count */}
+        <div className="flex items-center justify-between">
           <div className="flex items-center gap-1">
             {(['all', 'private', 'shared'] as const).map(f => (
               <button
@@ -1485,20 +1524,33 @@ function WorkspaceDashboard() {
               </button>
             ))}
           </div>
-          <button
-            onClick={() => setCenterView('new-space')}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors shrink-0"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            Create Project
-          </button>
+          <span className="text-xs text-muted-foreground">
+            {isFiltered ? `Showing ${filtered.length} of ${totalProjects} projects` : `${totalProjects} projects`}
+          </span>
         </div>
 
-        {/* Sort headers */}
-        <div className="flex items-center px-4 text-xs text-muted-foreground">
-          <span className="flex-1">Name</span>
-          <span className="w-16 shrink-0 text-right">Owner</span>
-          <span className="w-16 shrink-0 text-right">Date</span>
+        {/* Sortable headers — aligned to row layout */}
+        <div className="flex items-center gap-4 px-4">
+          <button
+            onClick={() => { setSortField('name'); setSortAsc(sortField === 'name' ? !sortAsc : true); }}
+            className="flex-1 text-[11px] font-medium text-foreground/60 hover:text-foreground transition-colors select-none flex items-center gap-1 text-left uppercase tracking-wide"
+          >
+            Name {sortField === 'name' && <span className="text-foreground">{sortAsc ? '↑' : '↓'}</span>}
+          </button>
+          <div className="flex items-center gap-3 shrink-0">
+            <button
+              onClick={() => { setSortField('owner'); setSortAsc(sortField === 'owner' ? !sortAsc : true); }}
+              className="text-[11px] font-medium text-foreground/60 hover:text-foreground transition-colors select-none flex items-center gap-1 w-16 justify-end uppercase tracking-wide"
+            >
+              Owner {sortField === 'owner' && <span className="text-foreground">{sortAsc ? '↑' : '↓'}</span>}
+            </button>
+            <button
+              onClick={() => { setSortField('date'); setSortAsc(sortField === 'date' ? !sortAsc : true); }}
+              className="text-[11px] font-medium text-foreground/60 hover:text-foreground transition-colors select-none flex items-center gap-1 w-16 justify-end uppercase tracking-wide"
+            >
+              Date {sortField === 'date' && <span className="text-foreground">{sortAsc ? '↑' : '↓'}</span>}
+            </button>
+          </div>
         </div>
 
         {paginated.length === 0 ? (
@@ -1516,20 +1568,22 @@ function WorkspaceDashboard() {
                 className="w-full flex items-center gap-4 px-4 py-3 rounded-lg hover:bg-accent/50 transition-colors text-left group"
               >
                 <div className="flex-1 min-w-0">
-                  <div className="text-sm font-medium text-foreground">{s.name}</div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium text-foreground truncate">{s.name}</span>
+                    {s.visibility === 'shared'
+                      ? <Globe className="w-3 h-3 text-muted-foreground shrink-0" />
+                      : <Lock className="w-3 h-3 text-muted-foreground shrink-0" />}
+                  </div>
                   <div className="text-xs text-muted-foreground mt-0.5 truncate">{s.description || 'No description'}</div>
                 </div>
                 <div className="flex items-center gap-3 shrink-0">
-                  {s.visibility === 'shared'
-                    ? <Globe className="w-3.5 h-3.5 text-muted-foreground" />
-                    : <Lock className="w-3.5 h-3.5 text-muted-foreground" />}
                   <span className="text-xs text-muted-foreground w-16 text-right">{s.owner}</span>
                   <span className="text-xs text-muted-foreground w-16 text-right">{s.createdAt.toLocaleDateString([], { month: 'short', day: 'numeric' })}</span>
                 </div>
               </button>
             ))}
             {/* Infinite scroll sentinel */}
-            {filtered.length > projectDisplayCount && <div ref={projectSentinelRef} className="h-4" />}
+            {sorted.length > projectDisplayCount && <div ref={projectSentinelRef} className="h-4" />}
           </div>
         )}
       </div>
@@ -1539,11 +1593,16 @@ function WorkspaceDashboard() {
 
 // ─── Main CenterPanel ────────────────────────────────────────
 
+function CollapsedTopBar() {
+  return null;
+}
+
 export function CenterPanel() {
-  const { centerView, adminTab } = useArgo();
+  const { centerView, adminTab, sidebarCollapsed } = useArgo();
 
   const wrap = (children: React.ReactNode) => (
     <div className="flex-1 flex flex-col h-screen bg-background min-w-0 overflow-y-auto argo-scrollbar">
+      <CollapsedTopBar />
       {children}
     </div>
   );
@@ -1557,6 +1616,7 @@ export function CenterPanel() {
   // ChatView has its own header — don't double-wrap
   return (
     <div className="flex-1 flex flex-col h-screen bg-background min-w-0">
+      <CollapsedTopBar />
       <ChatView />
     </div>
   );

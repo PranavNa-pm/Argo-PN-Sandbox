@@ -308,9 +308,8 @@ export function FilesPanel() {
         <div className="flex items-center justify-between">
           <span className="text-xs text-muted-foreground">{filtered.length} file{filtered.length !== 1 ? 's' : ''}</span>
           {isOwner ? (
-            <button className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary/90 transition-colors">
+            <button className="p-1.5 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors" title="Upload file">
               <Upload className="w-3.5 h-3.5" />
-              Upload File
             </button>
           ) : (
             <span className="text-[10px] text-muted-foreground italic">View & download only</span>
@@ -327,9 +326,9 @@ export function FilesPanel() {
             <p className="text-xs text-muted-foreground mt-1">Upload files to share with your project.</p>
           </div>
         ) : (
-          <div className="divide-y divide-border">
+          <div className="p-2 space-y-0.5">
             {filtered.map((f, i) => (
-              <div key={i} className="flex items-start gap-3 px-4 py-3 hover:bg-accent/30 transition-colors group">
+              <div key={i} className="flex items-start gap-3 px-3 py-2.5 rounded-lg hover:bg-accent/50 transition-colors group cursor-pointer">
                 <div className="w-8 h-8 rounded-lg bg-secondary flex items-center justify-center shrink-0 mt-0.5">
                   <FileText className="w-4 h-4 text-muted-foreground" />
                 </div>
@@ -341,9 +340,6 @@ export function FilesPanel() {
                     {f.size}
                     <span className="mx-1.5">·</span>
                     {f.date}
-                  </div>
-                  <div className="text-[10px] text-muted-foreground mt-0.5">
-                    {f.uploadedBy}
                   </div>
                 </div>
                 <div className="flex items-center gap-0.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity mt-1">
