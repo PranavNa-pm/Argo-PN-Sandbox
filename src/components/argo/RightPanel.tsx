@@ -5,7 +5,7 @@ import {
   FileText, Bot, Wrench, X, ChevronDown, ChevronRight,
   Layers, Database, Cpu, DollarSign, Timer, Activity,
   Download, Maximize2, Minimize2, MessageSquare, Upload,
-  Eye, Trash2, Search, FolderOpen
+  Trash2, FolderOpen
 } from 'lucide-react';
 import { useArgo } from '@/context/ArgoContext';
 import type { ExecutionTrace } from '@/types/argo';
@@ -343,9 +343,6 @@ export function FilesPanel() {
                   </div>
                 </div>
                 <div className="flex items-center gap-0.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity mt-1">
-                  <button className="p-1.5 rounded hover:bg-accent text-muted-foreground hover:text-foreground transition-colors" title="View">
-                    <Eye className="w-3.5 h-3.5" />
-                  </button>
                   <button className="p-1.5 rounded hover:bg-accent text-muted-foreground hover:text-foreground transition-colors" title="Download">
                     <Download className="w-3.5 h-3.5" />
                   </button>

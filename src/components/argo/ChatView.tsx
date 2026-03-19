@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import {
   Send, Plus, Globe, Paperclip, Bot, User, FileText,
   ChevronRight, ThumbsUp, ThumbsDown, AlertCircle, X, Lock,
-  FileSignature, Table2, ScrollText, Check,
+  FileSignature, Table2, ScrollText,
 } from 'lucide-react';
 import { useArgo } from '@/context/ArgoContext';
 import { cn } from '@/lib/utils';
@@ -13,6 +13,15 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { ChatMessageSkeleton } from '@/components/argo/skeletons/ChatMessageSkeleton';
+
+const MAX_FILES = 5;
+const MAX_FILE_SIZE_MB = 25;
+const ALLOWED_EXTENSIONS = ['.pdf', '.docx', '.pptx', '.txt', '.xlsx', '.png'];
+
+interface AttachedFile {
+  name: string;
+  size: string;
+}
 
 export function ChatView() {
   const {
@@ -27,7 +36,8 @@ export function ChatView() {
   const [input, setInput] = useState('');
   const [showPlus, setShowPlus] = useState(false);
   const [webSearchEnabled, setWebSearchEnabled] = useState(false);
-  const [attachedFileName, setAttachedFileName] = useState<string | null>(null);
+  const [attachedFiles, setAttachedFiles] = useState<AttachedFile[]>([]);
+  const [fileError, setFileError] = useState<string | null>(null);
   const [feedbackState, setFeedbackState] = useState<Record<string, 'up' | 'down' | null>>({});
   const [feedbackComment, setFeedbackComment] = useState<Record<string, string>>({});
   const [showFeedbackInput, setShowFeedbackInput] = useState<string | null>(null);
@@ -39,6 +49,13 @@ export function ChatView() {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [activeChat?.messages, isTyping]);
+
+  // Auto-clear file error after 4 seconds
+  useEffect(() => {
+    if (!fileError) return;
+    const t = setTimeout(() => setFileError(null), 4000);
+    return () => clearTimeout(t);
+  }, [fileError]);
 
   const handleSend = () => {
     if (!input.trim() || isTyping) return;
@@ -63,9 +80,38 @@ export function ChatView() {
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) setAttachedFileName(file.name);
+    const incoming = Array.from(e.target.files || []);
+    const results: AttachedFile[] = [];
+    let error: string | null = null;
+
+    for (const file of incoming) {
+      const ext = '.' + (file.name.split('.').pop() || '').toLowerCase();
+      if (!ALLOWED_EXTENSIONS.includes(ext)) {
+        error = `"${file.name}" — unsupported type. Allowed: PDF, DOCX, PPTX, TXT, XLSX, PNG`;
+        continue;
+      }
+      if (file.size > MAX_FILE_SIZE_MB * 1024 * 1024) {
+        error = `"${file.name}" exceeds the ${MAX_FILE_SIZE_MB} MB per-file limit`;
+        continue;
+      }
+      if (attachedFiles.length + results.length >= MAX_FILES) {
+        error = `Max ${MAX_FILES} files per chat`;
+        break;
+      }
+      const sizeStr = file.size >= 1024 * 1024
+        ? `${(file.size / 1024 / 1024).toFixed(1)} MB`
+        : `${Math.round(file.size / 1024)} KB`;
+      results.push({ name: file.name, size: sizeStr });
+    }
+
+    if (results.length) setAttachedFiles(prev => [...prev, ...results]);
+    if (error) setFileError(error);
     e.target.value = '';
+  };
+
+  const removeFile = (idx: number) => {
+    setAttachedFiles(prev => prev.filter((_, i) => i !== idx));
+    setFileError(null);
   };
 
   const handleThumbsUp = (msgId: string) => {
@@ -90,7 +136,7 @@ export function ChatView() {
     inputRef.current?.focus();
   };
 
-  // Capability icons
+  // Capability icons (kept for future use)
   const capabilityIcons: Record<string, typeof FileSignature> = {
     'General Assistance': Bot,
     'Generate Proposal Outline': FileSignature,
@@ -99,53 +145,78 @@ export function ChatView() {
     'Generate Company Comparison': Table2,
   };
 
-  const hasActiveTools = webSearchEnabled || !!attachedFileName;
+  const hasActiveTools = webSearchEnabled || attachedFiles.length > 0;
+  const atFileLimit = attachedFiles.length >= MAX_FILES;
   const isEmpty = (!activeChat || activeChat.messages.length === 0) && !isTyping;
 
-  // Shared active pills row
-  const ActivePills = () => hasActiveTools ? (
-    <div className="flex items-center gap-1.5 px-3 pt-2 pb-0 flex-wrap">
+  // Active pills shown above the textarea
+  const ActivePills = () => (hasActiveTools || fileError) ? (
+    <div className="flex items-start gap-1.5 px-3 pt-2 pb-0 flex-wrap">
       {webSearchEnabled && (
-        <span className="inline-flex items-center gap-1 text-[11px] bg-primary/10 border border-primary/20 text-primary rounded-full px-2 py-0.5">
+        <span className="inline-flex items-center gap-1 text-[11px] bg-secondary border border-border text-foreground rounded-full px-2 py-0.5">
           <Globe className="w-3 h-3 shrink-0" />
           Web search
-          <button onClick={() => setWebSearchEnabled(false)} className="ml-0.5 hover:text-primary/60 transition-colors">
+          <button onClick={() => setWebSearchEnabled(false)} className="ml-0.5 text-muted-foreground hover:text-foreground transition-colors" aria-label="Remove web search">
             <X className="w-3 h-3" />
           </button>
         </span>
       )}
-      {attachedFileName && (
-        <span className="inline-flex items-center gap-1 text-[11px] bg-secondary border border-border text-foreground rounded-full px-2 py-0.5 max-w-[200px]">
+      {attachedFiles.map((f, i) => (
+        <span key={i} className="inline-flex items-center gap-1 text-[11px] bg-secondary border border-border text-foreground rounded-full px-2 py-0.5 max-w-[220px]">
           <Paperclip className="w-3 h-3 shrink-0" />
-          <span className="truncate">{attachedFileName}</span>
-          <button onClick={() => setAttachedFileName(null)} className="ml-0.5 text-muted-foreground hover:text-foreground transition-colors shrink-0">
+          <span className="truncate">{f.name}</span>
+          <span className="text-muted-foreground shrink-0 ml-0.5">{f.size}</span>
+          <button onClick={() => removeFile(i)} className="ml-0.5 text-muted-foreground hover:text-foreground transition-colors shrink-0" aria-label={`Remove ${f.name}`}>
             <X className="w-3 h-3" />
           </button>
+        </span>
+      ))}
+      {fileError && (
+        <span className="inline-flex items-center gap-1 text-[11px] text-destructive animate-fade-in">
+          <AlertCircle className="w-3 h-3 shrink-0" />
+          {fileError}
         </span>
       )}
     </div>
   ) : null;
 
-  // Shared dropdown content
+  // Dropdown menu content (no tick marks, no blue highlighting)
   const PlusDropdown = () => (
-    <DropdownMenuContent side="top" align="start" className="w-44">
+    <DropdownMenuContent side="top" align="start" className="w-52">
       <DropdownMenuItem onClick={() => { setWebSearchEnabled(v => !v); setShowPlus(false); }}>
-        <Globe className={cn("w-3.5 h-3.5 mr-2", webSearchEnabled && "text-primary")} />
-        <span className={cn("flex-1", webSearchEnabled && "text-primary font-medium")}>Web Search</span>
-        {webSearchEnabled && <Check className="w-3.5 h-3.5 text-primary ml-1" />}
+        <Globe className="w-3.5 h-3.5 mr-2" />
+        Web Search
       </DropdownMenuItem>
-      <DropdownMenuItem onClick={() => { fileInputRef.current?.click(); setShowPlus(false); }}>
-        <Paperclip className={cn("w-3.5 h-3.5 mr-2", attachedFileName && "text-primary")} />
-        <span className={cn("flex-1", attachedFileName && "text-primary font-medium")}>Attach File</span>
-        {attachedFileName && <Check className="w-3.5 h-3.5 text-primary ml-1" />}
+      <DropdownMenuItem
+        onClick={() => { if (!atFileLimit) fileInputRef.current?.click(); setShowPlus(false); }}
+        disabled={atFileLimit}
+      >
+        <Paperclip className="w-3.5 h-3.5 mr-2" />
+        <span className="flex-1">Attach File</span>
+        {attachedFiles.length > 0 && (
+          <span className="text-[10px] text-muted-foreground ml-2 tabular-nums">
+            {attachedFiles.length}/{MAX_FILES}
+          </span>
+        )}
       </DropdownMenuItem>
+      <div className="px-2 py-1.5 border-t border-border mt-0.5 space-y-0.5">
+        <p className="text-[10px] text-muted-foreground">PDF, DOCX, PPTX, TXT, XLSX, PNG</p>
+        <p className="text-[10px] text-muted-foreground">Max {MAX_FILES} files · {MAX_FILE_SIZE_MB} MB each</p>
+      </div>
     </DropdownMenuContent>
   );
 
   return (
     <div className="flex-1 flex flex-col h-full min-w-0">
       {/* Hidden file input */}
-      <input ref={fileInputRef} type="file" className="hidden" onChange={handleFileChange} />
+      <input
+        ref={fileInputRef}
+        type="file"
+        className="hidden"
+        onChange={handleFileChange}
+        multiple
+        accept={ALLOWED_EXTENSIONS.join(',')}
+      />
 
       {/* Project Context Header */}
       {activeChat && activeSpace && !activeSpace.isDefault && (
@@ -159,6 +230,7 @@ export function ChatView() {
           </div>
         </div>
       )}
+
       {/* Messages */}
       <div className={cn("flex-1 overflow-y-auto argo-scrollbar", isEmpty && "flex flex-col")}>
         <div className={cn("max-w-4xl mx-auto px-4 py-6", isEmpty && "flex-1 flex flex-col")}>
@@ -180,14 +252,29 @@ export function ChatView() {
                       <div className="flex items-end gap-2 px-3 py-2.5">
                         <DropdownMenu open={showPlus} onOpenChange={setShowPlus}>
                           <DropdownMenuTrigger asChild>
-                            <button className={cn("p-1 rounded hover:bg-accent transition-colors", hasActiveTools ? "text-primary" : "text-muted-foreground hover:text-foreground")}>
+                            <button className={cn(
+                              "p-1 rounded hover:bg-accent transition-colors",
+                              hasActiveTools ? "text-primary" : "text-muted-foreground hover:text-foreground"
+                            )}>
                               <Plus className="w-4 h-4" />
                             </button>
                           </DropdownMenuTrigger>
                           <PlusDropdown />
                         </DropdownMenu>
-                        <textarea ref={inputRef} value={input} onChange={handleTextareaChange} onKeyDown={handleKeyDown} placeholder="Ask anything…" rows={1} className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground resize-none focus:outline-none min-h-[24px] max-h-[160px] py-0.5" />
-                        <button onClick={handleSend} disabled={!input.trim() || isTyping} className={cn("p-1.5 rounded-lg transition-colors", input.trim() && !isTyping ? "bg-primary text-primary-foreground hover:bg-primary/90" : "text-muted-foreground")}>
+                        <textarea
+                          ref={inputRef}
+                          value={input}
+                          onChange={handleTextareaChange}
+                          onKeyDown={handleKeyDown}
+                          placeholder="Ask anything…"
+                          rows={1}
+                          className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground resize-none focus:outline-none min-h-[24px] max-h-[160px] py-0.5"
+                        />
+                        <button
+                          onClick={handleSend}
+                          disabled={!input.trim() || isTyping}
+                          className={cn("p-1.5 rounded-lg transition-colors", input.trim() && !isTyping ? "bg-primary text-primary-foreground hover:bg-primary/90" : "text-muted-foreground")}
+                        >
                           <Send className="w-3.5 h-3.5" />
                         </button>
                       </div>
@@ -329,14 +416,29 @@ export function ChatView() {
               <div className="flex items-end gap-2 px-3 py-2.5">
                 <DropdownMenu open={showPlus} onOpenChange={setShowPlus}>
                   <DropdownMenuTrigger asChild>
-                    <button className={cn("p-1 rounded hover:bg-accent transition-colors", hasActiveTools ? "text-primary" : "text-muted-foreground hover:text-foreground")}>
+                    <button className={cn(
+                      "p-1 rounded hover:bg-accent transition-colors",
+                      hasActiveTools ? "text-primary" : "text-muted-foreground hover:text-foreground"
+                    )}>
                       <Plus className="w-4 h-4" />
                     </button>
                   </DropdownMenuTrigger>
                   <PlusDropdown />
                 </DropdownMenu>
-                <textarea ref={inputRef} value={input} onChange={handleTextareaChange} onKeyDown={handleKeyDown} placeholder="Ask anything…" rows={1} className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground resize-none focus:outline-none min-h-[24px] max-h-[160px] py-0.5" />
-                <button onClick={handleSend} disabled={!input.trim() || isTyping} className={cn("p-1.5 rounded-lg transition-colors", input.trim() && !isTyping ? "bg-primary text-primary-foreground hover:bg-primary/90" : "text-muted-foreground")}>
+                <textarea
+                  ref={inputRef}
+                  value={input}
+                  onChange={handleTextareaChange}
+                  onKeyDown={handleKeyDown}
+                  placeholder="Ask anything…"
+                  rows={1}
+                  className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground resize-none focus:outline-none min-h-[24px] max-h-[160px] py-0.5"
+                />
+                <button
+                  onClick={handleSend}
+                  disabled={!input.trim() || isTyping}
+                  className={cn("p-1.5 rounded-lg transition-colors", input.trim() && !isTyping ? "bg-primary text-primary-foreground hover:bg-primary/90" : "text-muted-foreground")}
+                >
                   <Send className="w-3.5 h-3.5" />
                 </button>
               </div>

@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
-  Plus, Globe, Eye, Download, Trash2, Upload,
+  Plus, Globe, Download, Trash2, Upload,
   Lock, MessageSquare, Link2, FileText,
   Pencil,
 } from 'lucide-react';
@@ -182,7 +182,7 @@ export function SpaceWorkspaceView() {
           ) : (
             <div className="space-y-0.5">
               {(MOCK_PROJECT_FILES[activeSpaceId] || []).map((f, i) => (
-                <div key={i} className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-accent/50 transition-colors group cursor-pointer">
+                <div key={i} onClick={() => openFilesPanel(activeSpaceId!)} className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-accent/50 transition-colors group cursor-pointer">
                   <div className="flex-1 min-w-0">
                     <div className="text-sm font-medium text-foreground truncate">{f.name}</div>
                     <div className="text-[11px] text-muted-foreground mt-0.5">
@@ -194,9 +194,8 @@ export function SpaceWorkspaceView() {
                     </div>
                   </div>
                   <div className="flex items-center gap-0.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity mt-1">
-                    <button className="p-1.5 rounded hover:bg-accent text-muted-foreground hover:text-foreground transition-colors" title="View"><Eye className="w-3.5 h-3.5" /></button>
-                    <button className="p-1.5 rounded hover:bg-accent text-muted-foreground hover:text-foreground transition-colors" title="Download"><Download className="w-3.5 h-3.5" /></button>
-                    {isOwner && <button className="p-1.5 rounded hover:bg-destructive/20 text-muted-foreground hover:text-destructive transition-colors" title="Delete"><Trash2 className="w-3.5 h-3.5" /></button>}
+                    <button onClick={e => e.stopPropagation()} className="p-1.5 rounded hover:bg-accent text-muted-foreground hover:text-foreground transition-colors" title="Download"><Download className="w-3.5 h-3.5" /></button>
+                    {isOwner && <button onClick={e => e.stopPropagation()} className="p-1.5 rounded hover:bg-destructive/20 text-muted-foreground hover:text-destructive transition-colors" title="Delete"><Trash2 className="w-3.5 h-3.5" /></button>}
                   </div>
                 </div>
               ))}
@@ -227,7 +226,7 @@ export function SpaceWorkspaceView() {
               {shareMembers.map(m => (
                 <div key={m.name} className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-accent/50 transition-colors">
                   <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                    <span className="text-xs font-medium text-primary">{m.name.charAt(0)}</span>
+                    <span className="text-xs font-medium text-primary">{m.name.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase()}</span>
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="text-sm font-medium text-foreground">{m.name}</div>
