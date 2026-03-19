@@ -1,8 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
-  Send, Plus, Globe, Paperclip, Bot, User, FileText,
-  ChevronRight, ThumbsUp, ThumbsDown, AlertCircle, X, Lock,
-  FileSignature, Table2, ScrollText,
+  Send, Plus, Globe, Paperclip, Bot, FileText,
+  ThumbsUp, ThumbsDown, AlertCircle, X, Lock,
+  FileSignature, Table2, ScrollText, Copy, Pencil, RotateCcw,
 } from 'lucide-react';
 import { useArgo } from '@/context/ArgoContext';
 import { cn } from '@/lib/utils';
@@ -31,7 +31,7 @@ export function ChatView() {
     isLoading,
   } = useArgo();
 
-  const activeSpace = spaces.find(s => s.id === activeSpaceId);
+  const activeSpace = spaces.find(s => s.id === (activeChat?.spaceId ?? activeSpaceId));
 
   const [input, setInput] = useState('');
   const [showPlus, setShowPlus] = useState(false);
@@ -218,13 +218,19 @@ export function ChatView() {
         accept={ALLOWED_EXTENSIONS.join(',')}
       />
 
-      {/* Project Context Header */}
-      {activeChat && activeSpace && !activeSpace.isDefault && (
+      {/* Chat Header */}
+      {activeChat && activeSpace && (
         <div className="border-b border-border px-4 py-3">
           <div className="max-w-4xl mx-auto">
             <div className="text-xs text-muted-foreground mb-0.5 flex items-center gap-1.5">
-              <span>Project: {activeSpace.name}</span>
-              {activeSpace.visibility === 'shared' ? <Globe className="w-3 h-3" /> : <Lock className="w-3 h-3" />}
+              {activeSpace.isDefault ? (
+                <span>General Chat</span>
+              ) : (
+                <>
+                  <span>Project: {activeSpace.name}</span>
+                  {activeSpace.visibility === 'shared' ? <Globe className="w-3 h-3" /> : <Lock className="w-3 h-3" />}
+                </>
+              )}
             </div>
             <div className="text-sm font-semibold text-foreground">{activeChat.name}</div>
           </div>
@@ -298,13 +304,27 @@ export function ChatView() {
           )}
 
           {activeChat?.messages.map((msg, idx) => (
-            <div key={msg.id} className="mb-6 animate-fade-in" style={{ animationDelay: `${Math.min(idx * 50, 300)}ms` }}>
-              <div className="flex gap-3">
-                <div className={cn("w-7 h-7 rounded-full flex items-center justify-center shrink-0 mt-0.5", msg.role === 'user' ? "bg-foreground" : "bg-secondary border border-border")}>
-                  {msg.role === 'user' ? <User className="w-3.5 h-3.5 text-background" /> : <Bot className="w-3.5 h-3.5 text-primary" />}
+            <div
+              key={msg.id}
+              className={cn("mb-5 animate-fade-in flex group", msg.role === 'user' ? "justify-end" : "justify-start")}
+              style={{ animationDelay: `${Math.min(idx * 50, 300)}ms` }}
+            >
+              {msg.role === 'user' ? (
+                <div className="flex flex-col items-end gap-1 max-w-[75%]">
+                  <div className="bg-secondary rounded-2xl px-4 py-2.5 text-sm text-foreground leading-[1.7] whitespace-pre-wrap">
+                    {msg.content}
+                  </div>
+                  <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button onClick={() => navigator.clipboard.writeText(msg.content)} title="Copy" className="p-1 rounded hover:bg-accent text-muted-foreground hover:text-foreground transition-colors">
+                      <Copy className="w-3 h-3" />
+                    </button>
+                    <button onClick={() => { setInput(msg.content); inputRef.current?.focus(); }} title="Edit" className="p-1 rounded hover:bg-accent text-muted-foreground hover:text-foreground transition-colors">
+                      <Pencil className="w-3 h-3" />
+                    </button>
+                  </div>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-xs font-semibold text-foreground mb-1">{msg.role === 'user' ? 'You' : msg.agentName || 'Argo'}</div>
+              ) : (
+                <div className="max-w-[85%]">
                   <div className="text-sm text-foreground leading-[1.7] whitespace-pre-wrap">
                     {msg.content.split(/(\*\*.*?\*\*|\*.*?\*)/).map((part, i) => {
                       if (part.startsWith('**') && part.endsWith('**')) return <strong key={i} className="font-bold">{part.slice(2, -2)}</strong>;
@@ -318,75 +338,65 @@ export function ChatView() {
                     const artName = linkedArtifact?.name || 'Artifact';
                     const artType = linkedArtifact ? (artTypeLabels[linkedArtifact.artifactType] || linkedArtifact.artifactType) : '';
                     return (
-                      <button onClick={() => { setActiveArtifactId(msg.artifactId!); setRightPanelView('artifact'); }} className="flex items-center gap-1.5 mt-3 px-3 py-2 rounded-lg border border-primary/30 bg-primary/5 text-xs text-foreground hover:bg-primary/10 transition-colors group">
+                      <button onClick={() => { setActiveArtifactId(msg.artifactId!); setRightPanelView('artifact'); }} className="flex items-center gap-1.5 mt-3 px-3 py-2 rounded-lg border border-primary/30 bg-primary/5 text-xs text-foreground hover:bg-primary/10 transition-colors">
                         <FileText className="w-3.5 h-3.5 text-primary shrink-0" />
                         <span className="truncate font-medium">{artName}</span>
                         {artType && <span className="text-muted-foreground shrink-0">({artType})</span>}
-                        <ChevronRight className="w-3.5 h-3.5 shrink-0 text-muted-foreground group-hover:text-foreground transition-colors" />
                       </button>
                     );
                   })()}
-                  {msg.role === 'assistant' && (
-                    <div className="mt-2">
-                      <div className="flex items-center gap-1">
-                        <button
-                          onClick={() => handleThumbsUp(msg.id)}
-                          className={cn(
-                            "p-1 rounded hover:bg-accent transition-colors",
-                            feedbackState[msg.id] === 'up' ? "text-success" : "text-muted-foreground hover:text-foreground"
-                          )}
-                          title="Good response"
-                        >
-                          <ThumbsUp className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          onClick={() => handleThumbsDown(msg.id)}
-                          className={cn(
-                            "p-1 rounded hover:bg-accent transition-colors",
-                            feedbackState[msg.id] === 'down' ? "text-destructive" : "text-muted-foreground hover:text-foreground"
-                          )}
-                          title="Poor response"
-                        >
-                          <ThumbsDown className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                      {showFeedbackInput === msg.id && feedbackState[msg.id] === 'down' && (
-                        <div className="mt-2 flex gap-2 max-w-md animate-fade-in">
-                          <input
-                            value={feedbackComment[msg.id] || ''}
-                            onChange={e => setFeedbackComment(prev => ({ ...prev, [msg.id]: e.target.value }))}
-                            placeholder="What went wrong?"
-                            className="flex-1 text-xs bg-background border border-border rounded-md px-2.5 py-1.5 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-                          />
-                          <button
-                            onClick={() => setShowFeedbackInput(null)}
-                            className="px-2.5 py-1.5 rounded-md bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary/90"
-                          >
-                            Submit
-                          </button>
-                        </div>
-                      )}
+                  <div className={cn(
+                    "mt-2 flex items-center gap-0.5 transition-opacity",
+                    feedbackState[msg.id] ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+                  )}>
+                    <button onClick={() => navigator.clipboard.writeText(msg.content)} title="Copy" className="p-1 rounded hover:bg-accent text-muted-foreground hover:text-foreground transition-colors">
+                      <Copy className="w-3 h-3" />
+                    </button>
+                    <button title="Retry" className="p-1 rounded hover:bg-accent text-muted-foreground hover:text-foreground transition-colors">
+                      <RotateCcw className="w-3 h-3" />
+                    </button>
+                    <button
+                      onClick={() => handleThumbsUp(msg.id)}
+                      className={cn("p-1 rounded hover:bg-accent transition-colors", feedbackState[msg.id] === 'up' ? "text-green-500" : "text-muted-foreground hover:text-foreground")}
+                      title="Good response"
+                    >
+                      <ThumbsUp className="w-3 h-3" />
+                    </button>
+                    <button
+                      onClick={() => handleThumbsDown(msg.id)}
+                      className={cn("p-1 rounded hover:bg-accent transition-colors", feedbackState[msg.id] === 'down' ? "text-destructive" : "text-muted-foreground hover:text-foreground")}
+                      title="Poor response"
+                    >
+                      <ThumbsDown className="w-3 h-3" />
+                    </button>
+                  </div>
+                  {showFeedbackInput === msg.id && feedbackState[msg.id] === 'down' && (
+                    <div className="mt-2 flex gap-2 max-w-md animate-fade-in">
+                      <input
+                        value={feedbackComment[msg.id] || ''}
+                        onChange={e => setFeedbackComment(prev => ({ ...prev, [msg.id]: e.target.value }))}
+                        placeholder="What went wrong?"
+                        className="flex-1 text-xs bg-background border border-border rounded-md px-2.5 py-1.5 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                      />
+                      <button
+                        onClick={() => setShowFeedbackInput(null)}
+                        className="px-2.5 py-1.5 rounded-md bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary/90"
+                      >
+                        Submit
+                      </button>
                     </div>
                   )}
                 </div>
-              </div>
+              )}
             </div>
           ))}
 
           {isTyping && (
-            <div className="mb-6 animate-fade-in">
-              <div className="flex gap-3">
-                <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 mt-0.5 bg-secondary border border-border">
-                  <Bot className="w-3.5 h-3.5 text-primary" />
-                </div>
-                <div className="flex-1">
-                  <div className="text-xs font-semibold text-foreground mb-1">{selectedAgent?.name}</div>
-                  <div className="flex items-center gap-1.5 py-1">
-                    <div className="typing-dot" />
-                    <div className="typing-dot" />
-                    <div className="typing-dot" />
-                  </div>
-                </div>
+            <div className="mb-5 animate-fade-in flex justify-start">
+              <div className="flex items-center gap-1.5 px-1 py-2">
+                <div className="typing-dot" />
+                <div className="typing-dot" />
+                <div className="typing-dot" />
               </div>
             </div>
           )}

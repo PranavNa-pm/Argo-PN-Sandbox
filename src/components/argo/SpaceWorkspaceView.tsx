@@ -226,7 +226,7 @@ export function SpaceWorkspaceView() {
               {shareMembers.map(m => (
                 <div key={m.name} className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-accent/50 transition-colors">
                   <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                    <span className="text-xs font-medium text-primary">{m.name.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase()}</span>
+                    <span className="text-xs font-medium text-primary">{m.isYou ? 'PN' : m.name.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase()}</span>
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="text-sm font-medium text-foreground">{m.name}</div>

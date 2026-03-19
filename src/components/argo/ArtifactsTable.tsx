@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Search, FileText, MessageSquare, Download, Layers, ChevronRight } from 'lucide-react';
+import { Search, MessageSquare, Download, Layers } from 'lucide-react';
 import { useArgo } from '@/context/ArgoContext';
 import { cn } from '@/lib/utils';
 import { ListRowSkeleton } from '@/components/argo/skeletons/ListRowSkeleton';
@@ -163,7 +163,6 @@ export function ArtifactsTable() {
                       <span onClick={(e) => { e.stopPropagation(); handleOpenInChat(a.chatId); }} className="p-1.5 rounded hover:bg-accent text-muted-foreground hover:text-foreground transition-colors cursor-pointer" title="Open in Chat"><MessageSquare className="w-3.5 h-3.5" /></span>
                       <span onClick={(e) => e.stopPropagation()} className="p-1.5 rounded hover:bg-accent text-muted-foreground hover:text-foreground transition-colors cursor-pointer" title="Download"><Download className="w-3.5 h-3.5" /></span>
                     </div>
-                    <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/40 group-hover:text-muted-foreground transition-colors shrink-0" />
                   </div>
                 </button>
               );

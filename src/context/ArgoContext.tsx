@@ -397,8 +397,16 @@ export function ArgoProvider({ children }: { children: ReactNode }) {
     { id: 'general-12', name: 'Onboarding Checklist', spaceId: MY_SPACE_ID, messages: [{ id: 'g12-msg', role: 'user' as const, content: 'Create a new hire onboarding checklist.', timestamp: new Date('2025-02-27') }], createdAt: new Date('2025-02-27') },
     // Client Name 1 (4 chats)
     { id: 'chat-1', name: 'Retail Analytics RFP', spaceId: 'space-1', messages: [
-      { id: 'rfp-msg-1', role: 'user' as const, content: 'Generate an RFP response for RetailCo covering their retail analytics platform requirements.', timestamp: new Date('2025-02-19') },
-      { id: 'rfp-msg-2', role: 'assistant' as const, content: 'I\'ve generated an RFP response for RetailCo. The artifact is now available — click "View Artifact" to see it.', agentId: 'pre-sales', agentName: 'Pre-Sales Agent', timestamp: new Date('2025-02-19'), artifactId: 'demo-rfp', trace: { agentName: 'Pre-Sales Agent', agentVersion: '1.2', capability: 'Generate Proposal Outline', toolsUsed: ['Knowledge Retrieval', 'Structured Artifact Generator'], documentsRetrieved: ['rfp-template-v2.md', 'retailco-brief.md'], model: 'gpt-4o', tokenUsage: { input: 2100, output: 4200 }, latencyMs: 4500, costEstimate: '$0.078' } },
+      { id: 'rfp-msg-1', role: 'user' as const, content: 'I need to put together an RFP response for RetailCo. They\'re evaluating analytics platforms for their stores.', timestamp: new Date('2025-02-19T09:00:00') },
+      { id: 'rfp-msg-2', role: 'assistant' as const, content: 'Happy to help with that. Before I draft anything, a few quick questions — what\'s the primary use case they\'re evaluating for? Real-time dashboards, batch reporting, or both?', agentId: 'pre-sales', agentName: 'Pre-Sales Agent', timestamp: new Date('2025-02-19T09:00:30') },
+      { id: 'rfp-msg-3', role: 'user' as const, content: 'Mostly real-time. They want live dashboards for store managers — sales, inventory alerts, and foot traffic data.', timestamp: new Date('2025-02-19T09:02:00') },
+      { id: 'rfp-msg-4', role: 'assistant' as const, content: 'Got it. And what\'s the scale we\'re talking about? A handful of pilot stores, or a full national rollout?', agentId: 'pre-sales', agentName: 'Pre-Sales Agent', timestamp: new Date('2025-02-19T09:02:20') },
+      { id: 'rfp-msg-5', role: 'user' as const, content: 'National rollout — around 400 stores. Regional managers also need mobile access.', timestamp: new Date('2025-02-19T09:03:30') },
+      { id: 'rfp-msg-6', role: 'assistant' as const, content: 'That\'s a meaningful deployment. Do you have any intel on their current tech stack? Knowing their cloud setup will affect how we position our integration story.', agentId: 'pre-sales', agentName: 'Pre-Sales Agent', timestamp: new Date('2025-02-19T09:03:50') },
+      { id: 'rfp-msg-7', role: 'user' as const, content: 'They\'re on Azure. Also using Dynamics 365 for ERP.', timestamp: new Date('2025-02-19T09:04:40') },
+      { id: 'rfp-msg-8', role: 'assistant' as const, content: 'That works in our favour — we have a strong Azure integration story and a pre-built Dynamics 365 connector. Is there a competitive situation here? Do you know who else is on the shortlist?', agentId: 'pre-sales', agentName: 'Pre-Sales Agent', timestamp: new Date('2025-02-19T09:05:00') },
+      { id: 'rfp-msg-9', role: 'user' as const, content: 'Tableau and a smaller boutique firm. Tableau is the benchmark they keep referencing.', timestamp: new Date('2025-02-19T09:06:10') },
+      { id: 'rfp-msg-10', role: 'assistant' as const, content: 'Good to know. We should lean into our managed service model and total cost of ownership angle — Tableau tends to be self-serve heavy, which translates to significant internal resource costs for a rollout at this scale. I have everything I need. Generating the full RFP response now.', agentId: 'pre-sales', agentName: 'Pre-Sales Agent', timestamp: new Date('2025-02-19T09:06:30'), artifactId: 'demo-rfp', trace: { agentName: 'Pre-Sales Agent', agentVersion: '1.2', capability: 'Generate Proposal Outline', toolsUsed: ['Knowledge Retrieval', 'Structured Artifact Generator'], documentsRetrieved: ['rfp-template-v2.md', 'retailco-brief.md'], model: 'gpt-4o', tokenUsage: { input: 2100, output: 4200 }, latencyMs: 4500, costEstimate: '$0.078' } },
     ], createdAt: new Date('2025-02-01') },
     { id: 'chat-1b', name: 'Discovery Call Notes', spaceId: 'space-1', messages: [{ id: 'c1b-msg', role: 'user' as const, content: 'Summarize the discovery call with Client Name 1.', timestamp: new Date('2025-01-20') }], createdAt: new Date('2025-01-20') },
     { id: 'chat-1c', name: 'Pricing Discussion', spaceId: 'space-1', messages: [{ id: 'c1c-msg', role: 'user' as const, content: 'Help me structure the pricing tiers for this engagement.', timestamp: new Date('2025-02-05') }], createdAt: new Date('2025-02-05') },
@@ -436,7 +444,7 @@ export function ArgoProvider({ children }: { children: ReactNode }) {
   // DEMO ONLY — simulates data loading for prototype. Remove when connecting Supabase.
   const [isLoading, setIsLoading] = useState(true);
   useEffect(() => {
-    const timer = setTimeout(() => setIsLoading(false), 1200);
+    const timer = setTimeout(() => setIsLoading(false), 2500);
     return () => clearTimeout(timer);
   }, []);
   const [rightPanelView, setRightPanelView] = useState<RightPanelView>('empty');
