@@ -844,7 +844,7 @@ function SpaceWorkspaceView() {
                   : 'border-transparent text-muted-foreground hover:text-foreground'
               }`}
             >
-              {tab === 'chats' ? `Chats (${spaceChats.length})` : tab.charAt(0).toUpperCase() + tab.slice(1)}
+              {tab.charAt(0).toUpperCase() + tab.slice(1)}
             </button>
           ))}
         </div>
@@ -934,33 +934,13 @@ function SpaceWorkspaceView() {
 
       {/* Members tab */}
       {!space.isDefault && activeTab === 'members' && (
-        <div className="space-y-4">
-          {/* Share link — owner only */}
-          {isOwner && (
-            <div className="p-3 bg-secondary/30 rounded-lg border border-border space-y-2">
-              <div className="text-xs font-semibold text-foreground">Share via Link</div>
-              <div className="flex items-center gap-2">
-                <div className="flex-1 px-2.5 py-1.5 bg-background border border-border rounded-md text-xs text-muted-foreground font-mono truncate select-all">
-                  https://argo.app/project/{space.id}
-                </div>
-                <button
-                  onClick={() => navigator.clipboard.writeText(`https://argo.app/project/${space.id}`)}
-                  className="p-1.5 rounded hover:bg-accent text-muted-foreground hover:text-foreground transition-colors shrink-0"
-                  title="Copy link"
-                >
-                  <Copy className="w-3.5 h-3.5" />
-                </button>
-              </div>
-              <p className="text-[10px] text-muted-foreground">Anyone with this link must log in to view the project.</p>
-            </div>
-          )}
-
+        <div className="flex flex-col gap-4">
           {/* Member list */}
-          <div>
+          <div className="flex-1">
             <p className="text-xs text-muted-foreground mb-3">{shareMembers.length} member{shareMembers.length !== 1 ? 's' : ''}</p>
             <div className="space-y-0.5">
               {shareMembers.map(m => (
-                <div key={m.name} className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-accent/50 transition-colors group">
+                <div key={m.name} className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-accent/50 transition-colors">
                   <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
                     <span className="text-xs font-medium text-primary">{m.name.charAt(0)}</span>
                   </div>
@@ -968,16 +948,26 @@ function SpaceWorkspaceView() {
                     <div className="text-sm font-medium text-foreground">{m.name}</div>
                   </div>
                   <span className="text-[10px] px-1.5 py-0.5 rounded bg-secondary text-muted-foreground shrink-0">{m.role}</span>
-                  {isOwner && (
-                    <button className="p-1 rounded hover:bg-destructive/20 text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-all" title="Remove member">
-                      <X className="w-3 h-3" />
-                    </button>
-                  )}
                 </div>
               ))}
             </div>
           </div>
 
+          {/* Share via link — compact, always visible for owner */}
+          {isOwner && (
+            <button
+              onClick={() => navigator.clipboard.writeText(`https://argo.app/project/${space.id}`)}
+              className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg border border-border hover:bg-accent/50 transition-colors text-left w-full group"
+              title="Copy project link"
+            >
+              <Link2 className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+              <div className="flex-1 min-w-0">
+                <div className="text-xs font-medium text-foreground">Copy project link</div>
+                <div className="text-[10px] text-muted-foreground">Anyone with this link must log in to view</div>
+              </div>
+              <Copy className="w-3 h-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+            </button>
+          )}
         </div>
       )}
       </div>
