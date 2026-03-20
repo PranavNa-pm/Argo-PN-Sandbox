@@ -72,7 +72,7 @@ function ChatHeader({ chat, space }: { chat: Chat; space: Space }) {
 }
 
 const MAX_FILES = 5;
-const MAX_FILE_SIZE_MB = 25;
+const MAX_FILE_SIZE_MB = 2;
 const ALLOWED_EXTENSIONS = ['.pdf', '.docx', '.pptx', '.txt', '.xlsx', '.png'];
 
 interface AttachedFile {
