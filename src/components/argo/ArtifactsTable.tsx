@@ -151,7 +151,10 @@ export function ArtifactsTable() {
                   className="w-full flex items-center gap-4 px-4 py-3 rounded-lg hover:bg-black/5 transition-colors text-left group"
                 >
                   <div className="flex-1 min-w-0">
-                    <div className="text-sm font-medium text-foreground truncate">{a.name}</div>
+                    <div className="text-sm font-medium text-foreground truncate flex items-center gap-2">
+                      <span className="font-mono text-xs text-muted-foreground shrink-0">v{a.version}</span>
+                      {a.name}
+                    </div>
                     <div className="text-xs text-muted-foreground mt-0.5 truncate">{spaceName} <span className="text-muted-foreground/50">›</span> {chatName}</div>
                   </div>
                   <div className="flex items-center gap-3 shrink-0">
