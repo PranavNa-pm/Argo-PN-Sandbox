@@ -106,7 +106,7 @@ export function SpaceWorkspaceView() {
       {/* Tab bar */}
       {!space.isDefault && (
         <div className="flex gap-0 border-b border-border -mt-2">
-          {(['chats', 'files', 'members'] as const).map(tab => (
+          {(['chats', 'files', 'members'] as const).filter(tab => tab !== 'members' || isShared).map(tab => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}

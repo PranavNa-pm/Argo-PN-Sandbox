@@ -2,30 +2,10 @@ import { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import {
-  FileText, X, ChevronDown, Copy, Check, GitCompare,
+  FileText, X, ChevronDown, Copy, Check,
   Download, Maximize2, Minimize2, Upload, FolderOpen,
   Trash2
 } from 'lucide-react';
-
-// Minimal LCS-based line diff — no external dependency needed
-type DiffLine = { type: 'same' | 'added' | 'removed'; line: string };
-function computeDiff(oldText: string, newText: string): DiffLine[] {
-  const a = oldText.split('\n');
-  const b = newText.split('\n');
-  const m = a.length, n = b.length;
-  const dp: number[][] = Array.from({ length: m + 1 }, () => new Array(n + 1).fill(0));
-  for (let i = 1; i <= m; i++)
-    for (let j = 1; j <= n; j++)
-      dp[i][j] = a[i-1] === b[j-1] ? dp[i-1][j-1] + 1 : Math.max(dp[i-1][j], dp[i][j-1]);
-  const result: DiffLine[] = [];
-  let i = m, j = n;
-  while (i > 0 || j > 0) {
-    if (i > 0 && j > 0 && a[i-1] === b[j-1]) { result.unshift({ type: 'same', line: a[i-1] }); i--; j--; }
-    else if (j > 0 && (i === 0 || dp[i][j-1] >= dp[i-1][j])) { result.unshift({ type: 'added', line: b[j-1] }); j--; }
-    else { result.unshift({ type: 'removed', line: a[i-1] }); i--; }
-  }
-  return result;
-}
 import { useArgo } from '@/context/ArgoContext';
 import { cn } from '@/lib/utils';
 import {
@@ -71,21 +51,18 @@ export function RightPanel() {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [viewingVersion, setViewingVersion] = useState<number | null>(null);
   const [copied, setCopied] = useState(false);
-  const [showDiff, setShowDiff] = useState(false);
 
   if (!activeArtifact) return null;
 
   const currentVersion = viewingVersion ?? activeArtifact.version;
   const versionData = activeArtifact.versions?.find(v => v.version === currentVersion);
   const displayContent = versionData?.content ?? activeArtifact.content;
-  const isViewingOldVersion = viewingVersion !== null && viewingVersion !== activeArtifact.version;
 
   const handleClose = () => {
     setActiveArtifactId(null);
     setRightPanelView('empty');
     setIsFullscreen(false);
     setViewingVersion(null);
-    setShowDiff(false);
   };
 
   const handleCopy = () => {
@@ -139,7 +116,7 @@ export function RightPanel() {
                 {[...activeArtifact.versions].reverse().map(v => (
                   <DropdownMenuItem
                     key={v.version}
-                    onClick={() => { setViewingVersion(v.version); setShowDiff(false); }}
+                    onClick={() => setViewingVersion(v.version)}
                     className={cn(v.version === currentVersion && "bg-accent font-semibold")}
                   >
                     <span className="font-mono">v{v.version}</span>
@@ -150,56 +127,17 @@ export function RightPanel() {
               </DropdownMenuContent>
             )}
           </DropdownMenu>
-          {isViewingOldVersion && (
-            <button
-              onClick={() => setShowDiff(!showDiff)}
-              className={cn(
-                "flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs transition-colors",
-                showDiff
-                  ? "bg-primary/10 text-primary"
-                  : "text-muted-foreground hover:text-foreground hover:bg-accent"
-              )}
-              title="Compare with current version"
-            >
-              <GitCompare className="w-3.5 h-3.5" />
-              Diff
-            </button>
-          )}
           <span className="text-[10px] text-muted-foreground ml-auto">Read-only · Refine via chat</span>
         </div>
       </div>
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto argo-scrollbar px-4 py-4">
-        {showDiff && isViewingOldVersion ? (
-          <div className="font-mono text-xs leading-relaxed animate-fade-in">
-            <div className="text-muted-foreground mb-3 text-[11px]">
-              v{currentVersion} → v{activeArtifact.version} (current)
-            </div>
-            {computeDiff(displayContent, activeArtifact.content).map((line, i) => (
-              <div
-                key={i}
-                className={cn(
-                  "px-2 py-0.5 whitespace-pre-wrap",
-                  line.type === 'added' && "bg-primary/10 text-primary",
-                  line.type === 'removed' && "bg-destructive/10 text-destructive line-through opacity-70",
-                  line.type === 'same' && "text-foreground/70"
-                )}
-              >
-                <span className="select-none mr-2 text-muted-foreground">
-                  {line.type === 'added' ? '+' : line.type === 'removed' ? '−' : ' '}
-                </span>
-                {line.line}
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="artifact-markdown animate-fade-in">
-            <ReactMarkdown remarkPlugins={[remarkGfm]}>
-              {displayContent}
-            </ReactMarkdown>
-          </div>
-        )}
+        <div className="artifact-markdown animate-fade-in">
+          <ReactMarkdown remarkPlugins={[remarkGfm]}>
+            {displayContent}
+          </ReactMarkdown>
+        </div>
       </div>
 
     </div>
