@@ -338,10 +338,8 @@ export function ChatView() {
                     const artName = linkedArtifact?.name || 'Artifact';
                     const artType = linkedArtifact ? (artTypeLabels[linkedArtifact.artifactType] || linkedArtifact.artifactType) : '';
                     return (
-                      <button onClick={() => { setActiveArtifactId(msg.artifactId!); setRightPanelView('artifact'); }} className="flex items-center gap-1.5 mt-3 px-3 py-2 rounded-lg border border-primary/30 bg-primary/5 text-xs text-foreground hover:bg-primary/10 transition-colors">
-                        <FileText className="w-3.5 h-3.5 text-primary shrink-0" />
-                        <span className="truncate font-medium">{artName}</span>
-                        {artType && <span className="text-muted-foreground shrink-0">({artType})</span>}
+                      <button onClick={() => { setActiveArtifactId(msg.artifactId!); setRightPanelView('artifact'); }} className="inline-flex items-center mt-3 px-3 py-1.5 rounded-lg border border-border bg-muted text-xs font-medium text-foreground hover:bg-accent transition-colors">
+                        {artName}
                       </button>
                     );
                   })()}
