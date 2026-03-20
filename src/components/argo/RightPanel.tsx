@@ -2,13 +2,11 @@ import { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import {
-  FileText, Bot, Wrench, X, ChevronDown, ChevronRight,
-  Layers, Database, Cpu, DollarSign, Timer, Activity,
-  Download, Maximize2, Minimize2, MessageSquare, Upload,
+  FileText, X, ChevronDown,
+  Download, Maximize2, Minimize2, Upload,
   Trash2, FolderOpen
 } from 'lucide-react';
 import { useArgo } from '@/context/ArgoContext';
-import type { ExecutionTrace } from '@/types/argo';
 import { cn } from '@/lib/utils';
 import {
   DropdownMenu,
@@ -48,104 +46,8 @@ export const MOCK_PROJECT_FILES: Record<string, { name: string; type: string; si
   ],
 };
 
-function TracePanel({ trace }: { trace: ExecutionTrace }) {
-  const [expanded, setExpanded] = useState(false);
-
-  return (
-    <div className="border-t border-border">
-      <button
-        onClick={() => setExpanded(!expanded)}
-        className="w-full flex items-center gap-2 px-4 py-2.5 text-xs font-semibold text-muted-foreground hover:text-foreground hover:bg-accent/30 transition-colors"
-      >
-        {expanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
-        <Activity className="w-3 h-3" />
-        Execution Trace
-      </button>
-      {expanded && (
-        <div className="px-4 pb-4 space-y-3 animate-fade-in">
-          <div className="grid grid-cols-2 gap-3">
-            <TraceItem icon={Bot} label="Agent" value={`${trace.agentName} v${trace.agentVersion}`} />
-            <TraceItem icon={Layers} label="Capability" value={trace.capability} />
-            <TraceItem icon={Cpu} label="Model" value={trace.model} />
-            <TraceItem icon={Timer} label="Latency" value={`${trace.latencyMs}ms`} />
-            <TraceItem icon={Database} label="Tokens" value={`${trace.tokenUsage.input} in / ${trace.tokenUsage.output} out`} />
-            <TraceItem icon={DollarSign} label="Cost" value={trace.costEstimate} />
-          </div>
-
-          <div>
-            <span className="text-[10px] text-muted-foreground uppercase tracking-widest font-semibold">Tools Used</span>
-            <div className="flex flex-wrap gap-1 mt-1">
-              {trace.toolsUsed.map(t => (
-                <span key={t} className="px-2 py-0.5 rounded bg-secondary text-xs text-secondary-foreground font-mono">{t}</span>
-              ))}
-            </div>
-          </div>
-
-          {trace.documentsRetrieved.length > 0 && (
-            <div>
-              <span className="text-[10px] text-muted-foreground uppercase tracking-widest font-semibold">Documents Retrieved</span>
-              <div className="mt-1 space-y-0.5">
-                {trace.documentsRetrieved.map(d => (
-                  <div key={d} className="flex items-center gap-1.5 text-xs font-mono text-secondary-foreground">
-                    <FileText className="w-3 h-3 text-muted-foreground" />
-                    {d}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          <div>
-            <span className="text-[10px] text-muted-foreground uppercase tracking-widest font-semibold">Execution Hierarchy</span>
-            <div className="mt-2 pl-1 text-xs font-mono text-secondary-foreground space-y-1">
-              <div className="flex items-center gap-1.5">
-                <Bot className="w-3 h-3 text-foreground" />
-                <span className="text-foreground font-semibold">Agent</span>
-                <span className="text-muted-foreground">→ {trace.agentName}</span>
-              </div>
-              <div className="flex items-center gap-1.5 pl-4">
-                <Layers className="w-3 h-3 text-muted-foreground" />
-                <span className="text-foreground font-semibold">Capability</span>
-                <span className="text-muted-foreground">→ {trace.capability}</span>
-              </div>
-              <div className="flex items-center gap-1.5 pl-8">
-                <Wrench className="w-3 h-3 text-muted-foreground" />
-                <span className="text-foreground font-semibold">Tools</span>
-                <span className="text-muted-foreground">→ {trace.toolsUsed.join(', ')}</span>
-              </div>
-              <div className="flex items-center gap-1.5 pl-12">
-                <Database className="w-3 h-3 text-success" />
-                <span className="text-foreground font-semibold">Data</span>
-                <span className="text-muted-foreground">→ {trace.documentsRetrieved.length > 0 ? trace.documentsRetrieved.join(', ') : 'structured output'}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function TraceItem({ icon: Icon, label, value }: { icon: any; label: string; value: string }) {
-  return (
-    <div className="flex items-start gap-2">
-      <Icon className="w-3 h-3 mt-0.5 text-muted-foreground shrink-0" />
-      <div>
-        <div className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">{label}</div>
-        <div className="text-xs text-foreground font-mono">{value}</div>
-      </div>
-    </div>
-  );
-}
-
-const typeLabels: Record<string, string> = {
-  'markdown': 'Markdown',
-  'html': 'HTML',
-  'pptx-outline': 'PPTX Outline',
-};
-
 export function RightPanel() {
-  const { activeArtifact, spaces, setActiveArtifactId, setRightPanelView, navigateToChat } = useArgo();
+  const { activeArtifact, setActiveArtifactId, setRightPanelView } = useArgo();
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [viewingVersion, setViewingVersion] = useState<number | null>(null);
 
@@ -154,21 +56,12 @@ export function RightPanel() {
   const currentVersion = viewingVersion ?? activeArtifact.version;
   const versionData = activeArtifact.versions?.find(v => v.version === currentVersion);
   const displayContent = versionData?.content ?? activeArtifact.content;
-  const displayTimestamp = versionData?.timestamp ?? activeArtifact.timestamp;
-  const displayFileSize = versionData?.fileSize ?? activeArtifact.fileSize;
-
-  const space = spaces.find(s => s.id === activeArtifact.spaceId);
-  const contextLabel = space?.isDefault ? 'General Chat' : space?.name || '—';
 
   const handleClose = () => {
     setActiveArtifactId(null);
     setRightPanelView('empty');
     setIsFullscreen(false);
     setViewingVersion(null);
-  };
-
-  const handleOpenInChat = () => {
-    navigateToChat(activeArtifact.chatId);
   };
 
   return (
@@ -195,67 +88,35 @@ export function RightPanel() {
           </div>
         </div>
 
-        {/* Metadata - improved 2-column layout */}
-        <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
-          <div>
-            <span className="text-muted-foreground text-[11px]">Type</span>
-            <div className="text-foreground font-mono mt-0.5">{typeLabels[activeArtifact.artifactType] || activeArtifact.artifactType}</div>
-          </div>
-          <div>
-            <span className="text-muted-foreground text-[11px]">Project</span>
-            <div className="text-foreground mt-0.5">{contextLabel}</div>
-          </div>
-          <div>
-            <span className="text-muted-foreground text-[11px]">File Size</span>
-            <div className="text-foreground font-mono mt-0.5">{displayFileSize}</div>
-          </div>
-          <div>
-            <span className="text-muted-foreground text-[11px]">Last Updated</span>
-            <div className="text-foreground font-mono mt-0.5">
-              {displayTimestamp.toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
-            </div>
-          </div>
-          <div>
-            <span className="text-muted-foreground text-[11px]">Version</span>
-            <div className="mt-0.5">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button className="flex items-center gap-1 text-foreground font-mono hover:text-primary transition-colors">
-                    v{currentVersion}
-                    {currentVersion === activeArtifact.version && <span className="text-[9px] text-muted-foreground">(current)</span>}
-                    {activeArtifact.versions && activeArtifact.versions.length > 1 && <ChevronDown className="w-2.5 h-2.5" />}
-                  </button>
-                </DropdownMenuTrigger>
-                {activeArtifact.versions && activeArtifact.versions.length > 1 && (
-                  <DropdownMenuContent align="start" className="w-48">
-                    {[...activeArtifact.versions].reverse().map(v => (
-                      <DropdownMenuItem
-                        key={v.version}
-                        onClick={() => setViewingVersion(v.version)}
-                        className={cn(v.version === currentVersion && "bg-accent font-semibold")}
-                      >
-                        <span className="font-mono">v{v.version}</span>
-                        {v.version === activeArtifact.version && <span className="ml-1 text-muted-foreground">(current)</span>}
-                        <span className="text-muted-foreground ml-auto">{v.timestamp.toLocaleDateString([], { month: 'short', day: 'numeric' })}</span>
-                      </DropdownMenuItem>
-                    ))}
-                  </DropdownMenuContent>
-                )}
-              </DropdownMenu>
-            </div>
-          </div>
-        </div>
-
         {/* Actions bar */}
         <div className="flex items-center gap-2 pt-1">
-          <button className="flex items-center gap-1 px-2.5 py-1 rounded-md text-xs text-muted-foreground hover:text-foreground hover:bg-accent transition-colors" title="Download as DOCX">
+          <button className="flex items-center gap-1 px-2.5 py-1 rounded-md text-xs text-muted-foreground hover:text-foreground hover:bg-accent transition-colors" title="Download">
             <Download className="w-3.5 h-3.5" />
             Download
           </button>
-          <button onClick={handleOpenInChat} className="flex items-center gap-1 px-2.5 py-1 rounded-md text-xs text-muted-foreground hover:text-foreground hover:bg-accent transition-colors" title="Open in Chat">
-            <MessageSquare className="w-3.5 h-3.5" />
-            Open in Chat
-          </button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="flex items-center gap-1 px-2.5 py-1 rounded-md text-xs text-muted-foreground hover:text-foreground hover:bg-accent transition-colors font-mono">
+                v{currentVersion}
+                {activeArtifact.versions && activeArtifact.versions.length > 1 && <ChevronDown className="w-2.5 h-2.5" />}
+              </button>
+            </DropdownMenuTrigger>
+            {activeArtifact.versions && activeArtifact.versions.length > 1 && (
+              <DropdownMenuContent align="start" className="w-48">
+                {[...activeArtifact.versions].reverse().map(v => (
+                  <DropdownMenuItem
+                    key={v.version}
+                    onClick={() => setViewingVersion(v.version)}
+                    className={cn(v.version === currentVersion && "bg-accent font-semibold")}
+                  >
+                    <span className="font-mono">v{v.version}</span>
+                    {v.version === activeArtifact.version && <span className="ml-1 text-muted-foreground">(current)</span>}
+                    <span className="text-muted-foreground ml-auto">{v.timestamp.toLocaleDateString([], { month: 'short', day: 'numeric' })}</span>
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            )}
+          </DropdownMenu>
           <span className="text-[10px] text-muted-foreground ml-auto">Read-only · Refine via chat</span>
         </div>
       </div>
@@ -269,10 +130,6 @@ export function RightPanel() {
         </div>
       </div>
 
-      {/* Trace */}
-      {activeArtifact.trace && (
-        <TracePanel trace={activeArtifact.trace} />
-      )}
     </div>
   );
 }
