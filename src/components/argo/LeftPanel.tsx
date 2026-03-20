@@ -57,6 +57,7 @@ function UserProfileSection({ onOpenConfig }: { onOpenConfig: (tab: 'agents' | '
             <DropdownMenuSubTrigger>
               <Bot className="w-3.5 h-3.5 mr-2" />
               Configurations
+              <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded bg-secondary text-muted-foreground">WIP</span>
             </DropdownMenuSubTrigger>
             <DropdownMenuSubContent>
               <DropdownMenuItem onClick={() => onOpenConfig('agents')}>

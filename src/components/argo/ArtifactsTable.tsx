@@ -112,7 +112,7 @@ export function ArtifactsTable() {
           >
             Name {sortField === 'name' && <span className="text-foreground">{sortAsc ? '↑' : '↓'}</span>}
           </button>
-          <div className="flex items-center gap-3 shrink-0">
+          <div className="flex items-center gap-3 shrink-0 pr-8">
             <button
               onClick={() => { setSortField('type'); setSortAsc(sortField === 'type' ? !sortAsc : true); }}
               className="text-[11px] font-medium text-foreground/60 hover:text-foreground transition-colors select-none flex items-center gap-1 w-24 uppercase tracking-wide"
@@ -155,9 +155,9 @@ export function ArtifactsTable() {
                     <div className="text-xs text-muted-foreground mt-0.5 truncate">{spaceName} <span className="text-muted-foreground/50">›</span> {chatName}</div>
                   </div>
                   <div className="flex items-center gap-3 shrink-0">
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-1.5 w-24">
                       <span className={cn("w-2 h-2 rounded-full shrink-0", dotColor)} />
-                      <span className="text-xs text-muted-foreground w-20">{typeLabels[a.artifactType] || a.artifactType}</span>
+                      <span className="text-xs text-muted-foreground">{typeLabels[a.artifactType] || a.artifactType}</span>
                     </div>
                     <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                       <span onClick={(e) => { e.stopPropagation(); handleOpenInChat(a.chatId); }} className="p-1.5 rounded hover:bg-accent text-muted-foreground hover:text-foreground transition-colors cursor-pointer" title="Open in Chat"><MessageSquare className="w-3.5 h-3.5" /></span>

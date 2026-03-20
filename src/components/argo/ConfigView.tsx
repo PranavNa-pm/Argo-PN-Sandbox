@@ -31,6 +31,7 @@ export function UsersMappedCell({ count, users }: { count: number; users: string
 }
 
 export function ConfigView({ tab }: { tab: AdminTab }) {
+  const { setAdminTab } = useArgo();
   const [showAddAgent, setShowAddAgent] = useState(false);
   const [editingAgentId, setEditingAgentId] = useState<string | null>(null);
   const [agentSearch, setAgentSearch] = useState('');
@@ -226,6 +227,31 @@ export function ConfigView({ tab }: { tab: AdminTab }) {
               </div>
             </div>
           ))}
+        </div>
+
+        {/* Agent Configuration sub-sections */}
+        <div className="pt-2 border-t border-border space-y-0.5">
+          <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide px-1 pb-1">Also in Agent Configuration</p>
+          <button
+            onClick={() => setAdminTab('prompts')}
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-black/5 transition-colors text-left"
+          >
+            <BookOpen className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+            <div className="flex-1">
+              <span className="text-sm font-medium text-foreground">Prompt Manager</span>
+            </div>
+            <span className="text-[10px] px-1.5 py-0.5 rounded bg-secondary text-muted-foreground">WIP</span>
+          </button>
+          <button
+            onClick={() => setAdminTab('groups')}
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-black/5 transition-colors text-left"
+          >
+            <Users className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+            <div className="flex-1">
+              <span className="text-sm font-medium text-foreground">Group Permissions</span>
+            </div>
+            <span className="text-[10px] px-1.5 py-0.5 rounded bg-secondary text-muted-foreground">WIP</span>
+          </button>
         </div>
       </div>
     );
