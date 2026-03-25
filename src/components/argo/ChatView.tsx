@@ -3,6 +3,8 @@ import {
   Send, Plus, Globe, Paperclip, Bot, FileText,
   ThumbsUp, ThumbsDown, AlertCircle, X, Lock,
   FileSignature, Table2, ScrollText, Copy,
+  ChevronDown, Wrench, CheckCircle2, XCircle, Loader2, FileSearch,
+  Zap, HelpCircle,
 } from 'lucide-react';
 import { useArgo } from '@/context/ArgoContext';
 import { cn } from '@/lib/utils';
@@ -10,10 +12,70 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { ChatMessageSkeleton } from '@/components/argo/skeletons/ChatMessageSkeleton';
-import type { Chat, Space } from '@/types/argo';
+import type { Chat, Space, ExecutionTrace, Skill } from '@/types/argo';
+
+// ─── ToolTrace Component ───────────────────────────────────────
+// Created: 2026-03-24
+function ToolTrace({ trace }: { trace: ExecutionTrace }) {
+  const [expanded, setExpanded] = useState(false);
+  const toolCount = trace.tools?.length ?? trace.toolsUsed.length;
+  const tools = trace.tools ?? trace.toolsUsed.map(n => ({ name: n, status: 'success' as const }));
+
+  return (
+    <div className="mt-2 mb-1">
+      <button
+        onClick={() => setExpanded(v => !v)}
+        className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+      >
+        <Wrench className="w-3 h-3" />
+        Tools Used ({toolCount})
+        <ChevronDown className={cn("w-3 h-3 transition-transform", expanded && "rotate-180")} />
+      </button>
+      {expanded && (
+        <div className="mt-2 rounded-lg border border-border bg-secondary/50 px-3 py-2 space-y-1.5">
+          {tools.map((t, i) => (
+            <div key={i} className="flex items-center justify-between gap-2 text-xs">
+              <div className="flex items-center gap-2">
+                {t.status === 'running'
+                  ? <Loader2 className="w-3 h-3 text-primary animate-spin shrink-0" />
+                  : t.status === 'failed'
+                  ? <XCircle className="w-3 h-3 text-destructive shrink-0" />
+                  : <CheckCircle2 className="w-3 h-3 text-green-500 shrink-0" />}
+                <span className="text-foreground">{t.name}</span>
+              </div>
+              <span className={cn("text-muted-foreground", t.status === 'failed' && 'text-destructive', t.status === 'running' && 'text-primary')}>
+                {t.status === 'running' ? 'Running…' : t.status === 'failed' ? `Failed${t.error ? ` — ${t.error}` : ''}` : 'Success'}
+              </span>
+            </div>
+          ))}
+          {trace.documentsRetrieved.length > 0 && (
+            <div className="pt-2 border-t border-border space-y-1">
+              <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground uppercase tracking-wide font-medium">
+                <FileSearch className="w-3 h-3" />
+                Documents retrieved
+              </div>
+              {trace.documentsRetrieved.map((d, i) => (
+                <div key={i} className="text-xs text-muted-foreground pl-1">{d}</div>
+              ))}
+            </div>
+          )}
+          <div className="pt-2 border-t border-border grid grid-cols-3 gap-2 text-xs text-muted-foreground">
+            <div><span className="font-medium text-foreground">Model</span><br />{trace.model}</div>
+            <div><span className="font-medium text-foreground">Tokens</span><br />{(trace.tokenUsage.input + trace.tokenUsage.output).toLocaleString()}</div>
+            <div><span className="font-medium text-foreground">Cost</span><br />{trace.costEstimate}</div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 // ─── ChatHeader ───────────────────────────────────────────────
 function ChatHeader({ chat, space }: { chat: Chat; space: Space }) {
@@ -84,7 +146,7 @@ export function ChatView() {
   const {
     activeChat, selectedAgent, artifacts,
     sendMessage, isTyping, setActiveArtifactId, setRightPanelView,
-    activeSpaceId, spaces,
+    activeSpaceId, spaces, skills,
     isLoading,
   } = useArgo();
 
@@ -93,6 +155,7 @@ export function ChatView() {
   const [input, setInput] = useState('');
   const [showPlus, setShowPlus] = useState(false);
   const [webSearchEnabled, setWebSearchEnabled] = useState(false);
+  const [activeSkill, setActiveSkill] = useState<Skill | null>(null);
   const [attachedFiles, setAttachedFiles] = useState<AttachedFile[]>([]);
   const [fileError, setFileError] = useState<string | null>(null);
   const [feedbackState, setFeedbackState] = useState<Record<string, 'up' | 'down' | null>>({});
@@ -202,7 +265,7 @@ export function ChatView() {
     'Generate Company Comparison': Table2,
   };
 
-  const hasActiveTools = webSearchEnabled || attachedFiles.length > 0;
+  const hasActiveTools = webSearchEnabled || attachedFiles.length > 0 || activeSkill !== null;
   const atFileLimit = attachedFiles.length >= MAX_FILES;
   const isEmpty = (!activeChat || activeChat.messages.length === 0) && !isTyping;
 
@@ -214,6 +277,15 @@ export function ChatView() {
           <Globe className="w-3 h-3 shrink-0" />
           Web search
           <button onClick={() => setWebSearchEnabled(false)} className="ml-0.5 hover:text-primary/60 transition-colors" aria-label="Remove web search">
+            <X className="w-3 h-3" />
+          </button>
+        </span>
+      )}
+      {activeSkill && (
+        <span className="inline-flex items-center gap-1 text-[11px] bg-primary/10 border border-primary/30 text-primary rounded-full px-2 py-0.5">
+          <Zap className="w-3 h-3 shrink-0" />
+          {activeSkill.name}
+          <button onClick={() => setActiveSkill(null)} className="ml-0.5 hover:text-primary/60 transition-colors" aria-label={`Remove ${activeSkill.name}`}>
             <X className="w-3 h-3" />
           </button>
         </span>
@@ -238,30 +310,66 @@ export function ChatView() {
   ) : null;
 
   // Dropdown menu content (no tick marks, no blue highlighting)
-  const PlusDropdown = () => (
-    <DropdownMenuContent side="top" align="start" className="w-52">
-      <DropdownMenuItem onClick={() => { setWebSearchEnabled(v => !v); setShowPlus(false); }}>
-        <Globe className="w-3.5 h-3.5 mr-2" />
-        Web Search
-      </DropdownMenuItem>
-      <DropdownMenuItem
-        onClick={() => { if (!atFileLimit) fileInputRef.current?.click(); setShowPlus(false); }}
-        disabled={atFileLimit}
-      >
-        <Paperclip className="w-3.5 h-3.5 mr-2" />
-        <span className="flex-1">Attach File</span>
-        {attachedFiles.length > 0 && (
-          <span className="text-[10px] text-muted-foreground ml-2 tabular-nums">
-            {attachedFiles.length}/{MAX_FILES}
-          </span>
-        )}
-      </DropdownMenuItem>
-      <div className="px-2 py-1.5 border-t border-border mt-0.5 space-y-0.5">
-        <p className="text-[10px] text-muted-foreground">PDF, DOCX, PPTX, TXT, XLSX, PNG</p>
-        <p className="text-[10px] text-muted-foreground">Max {MAX_FILES} files · {MAX_FILE_SIZE_MB} MB each</p>
-      </div>
-    </DropdownMenuContent>
-  );
+  const PlusDropdown = () => {
+    const orgSkills = skills.filter(s => s.scope === 'org');
+    return (
+      <DropdownMenuContent side="top" align="start" className="w-52">
+        <DropdownMenuItem onClick={() => { setWebSearchEnabled(v => !v); setShowPlus(false); }}>
+          <Globe className="w-3.5 h-3.5 mr-2" />
+          Web Search
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          onClick={() => { if (!atFileLimit) fileInputRef.current?.click(); setShowPlus(false); }}
+          disabled={atFileLimit}
+        >
+          <Paperclip className="w-3.5 h-3.5 mr-2" />
+          <span className="flex-1">Attach File</span>
+          {attachedFiles.length > 0 && (
+            <span className="text-[10px] text-muted-foreground ml-2 tabular-nums">
+              {attachedFiles.length}/{MAX_FILES}
+            </span>
+          )}
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuSub>
+          <DropdownMenuSubTrigger>
+            <Zap className="w-3.5 h-3.5 mr-2" />
+            Skills
+          </DropdownMenuSubTrigger>
+          <DropdownMenuSubContent className="w-44">
+            {/* Org Skills — active */}
+            <DropdownMenuSub>
+              <DropdownMenuSubTrigger>Org Skills</DropdownMenuSubTrigger>
+              <DropdownMenuSubContent className="w-48">
+                {orgSkills.map(skill => (
+                  <DropdownMenuItem
+                    key={skill.id}
+                    onClick={() => { setActiveSkill(skill); setShowPlus(false); }}
+                  >
+                    {skill.name}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuSubContent>
+            </DropdownMenuSub>
+            {/* Group Skills — coming soon */}
+            <DropdownMenuItem disabled className="opacity-40 cursor-not-allowed">
+              <span className="flex-1">Group Skills</span>
+              <span className="text-[10px] text-muted-foreground ml-2">Soon</span>
+            </DropdownMenuItem>
+            {/* Personal Skills — coming soon */}
+            <DropdownMenuItem disabled className="opacity-40 cursor-not-allowed">
+              <span className="flex-1">Personal Skills</span>
+              <span className="text-[10px] text-muted-foreground ml-2">Soon</span>
+            </DropdownMenuItem>
+          </DropdownMenuSubContent>
+        </DropdownMenuSub>
+        <div className="px-2 py-1.5 border-t border-border mt-0.5 space-y-0.5">
+          <p className="text-[10px] text-muted-foreground">PDF, DOCX, PPTX, TXT, XLSX, PNG</p>
+          <p className="text-[10px] text-muted-foreground">Max {MAX_FILES} files · {MAX_FILE_SIZE_MB} MB each</p>
+        </div>
+      </DropdownMenuContent>
+    );
+  };
 
   return (
     <div className="flex-1 flex flex-col h-full min-w-0">
@@ -350,7 +458,13 @@ export function ChatView() {
                   </div>
                 </div>
               ) : (
-                <div className="max-w-[85%]">
+                <div className={cn("max-w-[85%]", msg.type === 'clarification' && "bg-secondary/40 border border-border/60 rounded-xl px-4 py-3")}>
+                  {msg.type === 'clarification' && (
+                    <div className="flex items-center gap-1.5 mb-2 text-[11px] font-medium text-muted-foreground uppercase tracking-wide">
+                      <HelpCircle className="w-3 h-3" />
+                      Clarification needed
+                    </div>
+                  )}
                   <div className="text-sm text-foreground leading-[1.7] whitespace-pre-wrap">
                     {msg.content.split(/(\*\*.*?\*\*|\*.*?\*)/).map((part, i) => {
                       if (part.startsWith('**') && part.endsWith('**')) return <strong key={i} className="font-bold">{part.slice(2, -2)}</strong>;
@@ -358,6 +472,21 @@ export function ChatView() {
                       return <span key={i}>{part}</span>;
                     })}
                   </div>
+                  {msg.type === 'clarification' && msg.suggestions && msg.suggestions.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mt-3">
+                      {msg.suggestions.map((s, i) => (
+                        <button
+                          key={i}
+                          onClick={() => { if (!isTyping) sendMessage(s); }}
+                          disabled={isTyping}
+                          className="border border-border rounded-full px-3 py-1 text-xs text-foreground hover:bg-accent transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                        >
+                          {s}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  {msg.trace && <ToolTrace trace={msg.trace} />}
                   {msg.artifactId && (() => {
                     const artTypeLabels: Record<string, string> = { 'markdown': 'Markdown', 'html': 'HTML', 'pptx-outline': 'PPTX Outline' };
                     const linkedArtifact = artifacts.find(a => a.id === msg.artifactId);

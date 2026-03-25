@@ -20,10 +20,19 @@ export interface Agent {
   capabilities: Capability[];
 }
 
+export interface Skill {
+  id: string;
+  name: string;
+  description: string;
+  scope: 'org' | 'group' | 'personal';
+}
+
 export interface Message {
   id: string;
   role: 'user' | 'assistant';
   content: string;
+  type?: 'message' | 'clarification';
+  suggestions?: string[];
   agentId?: string;
   agentName?: string;
   timestamp: Date;
@@ -31,11 +40,18 @@ export interface Message {
   trace?: ExecutionTrace;
 }
 
+export interface TraceTool {
+  name: string;
+  status: 'running' | 'success' | 'failed';
+  error?: string;
+}
+
 export interface ExecutionTrace {
   agentName: string;
   agentVersion: string;
   capability: string;
   toolsUsed: string[];
+  tools?: TraceTool[];
   documentsRetrieved: string[];
   model: string;
   tokenUsage: { input: number; output: number };

@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useCallback, useRef, useEffect, type ReactNode } from 'react';
-import type { Agent, Tool, Artifact, Chat, Space, Message, ExecutionTrace, RightPanelView, AdminTab, CenterView } from '@/types/argo';
+import type { Agent, Tool, Artifact, Chat, Space, Message, ExecutionTrace, RightPanelView, AdminTab, CenterView, Skill } from '@/types/argo';
 
 // ─── Helpers ─────────────────────────────────────────────────
 
@@ -7,6 +7,14 @@ import type { Agent, Tool, Artifact, Chat, Space, Message, ExecutionTrace, Right
 const generateShareCode = () => Math.random().toString(36).slice(2, 6) + Math.random().toString(36).slice(2, 6);
 
 // ─── Mock Data ───────────────────────────────────────────────
+
+// DEMO ONLY — remove when connecting backend
+export const SKILLS: Skill[] = [
+  { id: 'skill-proposal', name: 'Proposal generator', description: 'Generates structured proposal outlines for client engagements.', scope: 'org' },
+  { id: 'skill-sow', name: 'SOW drafter', description: 'Drafts statements of work with deliverables and terms.', scope: 'org' },
+  { id: 'skill-exec-summary', name: 'Executive summary', description: 'Creates concise executive summaries for leadership.', scope: 'org' },
+  { id: 'skill-comparison', name: 'Company comparison', description: 'Generates structured company comparison tables.', scope: 'org' },
+];
 
 export const TOOLS: Tool[] = [
   { id: 'knowledge-retrieval', name: 'Knowledge Retrieval', description: 'Searches internal knowledge base for relevant documents, templates, and historical context.' },
@@ -72,7 +80,9 @@ export const AGENTS: Agent[] = [
 
 function generateTrace(agentName: string, version: string, capability: string, tools: string[]): ExecutionTrace {
   return {
-    agentName, agentVersion: version, capability, toolsUsed: tools,
+    agentName, agentVersion: version, capability,
+    toolsUsed: tools,
+    tools: tools.map(name => ({ name, status: 'success' as const })),
     documentsRetrieved: capability.includes('Proposal')
       ? ['methodology-v3.md', 'pricing-guide-2024.md', 'client-template.md']
       : capability.includes('SOW') ? ['sow-template-v2.md', 'rate-card-2024.md']
@@ -108,8 +118,19 @@ function generateSmartChatTitle(message: string): string {
   return words.length > 30 ? words.slice(0, 30) + '…' : words;
 }
 
-function simulateResponse(agentId: string, message: string): { reply: string; artifact?: { name: string; content: string; capability: string; tools: string[]; trace: ExecutionTrace } } {
+function simulateResponse(agentId: string, message: string): { reply: string; artifact?: { name: string; content: string; capability: string; tools: string[]; trace: ExecutionTrace }; isClarification?: boolean; suggestions?: string[] } {
   const lc = message.toLowerCase();
+  // DEMO ONLY — human-in-the-loop clarification when intent is ambiguous
+  const isAmbiguous = (lc.includes('help me') || lc.includes('can you help') || lc.includes('i need') || lc.includes('create something') || lc.includes('not sure') || lc.includes('help with'))
+    && !lc.includes('proposal') && !lc.includes('sow') && !lc.includes('statement of work')
+    && !lc.includes('summary') && !lc.includes('comparison') && !lc.includes('compare');
+  if (isAmbiguous) {
+    return {
+      reply: "To help you best — what kind of output are you looking for?",
+      isClarification: true,
+      suggestions: ['Proposal outline', 'Statement of work', 'Executive summary', 'Company comparison'],
+    };
+  }
   if (lc.includes('proposal')) {
     const client = extractClientName(message);
     return { reply: `I've generated a proposal outline for ${client}. The artifact is now available — click "View Artifact" to see it.`, artifact: { name: `Proposal Outline — ${client}`, content: generateProposal(client), capability: 'Generate Proposal Outline', tools: ['Knowledge Retrieval', 'Structured Artifact Generator'], trace: generateTrace('General Agent', '1.0', 'Generate Proposal Outline', ['Knowledge Retrieval', 'Structured Artifact Generator']) } };
@@ -331,6 +352,7 @@ interface ArgoContextType {
   selectedAgent: Agent | undefined;
   spaceArtifacts: Artifact[];
   allArtifacts: Artifact[];
+  skills: Skill[];
 
   setActiveSpaceId: (id: string) => void;
   setActiveChatId: (id: string | null) => void;
@@ -391,7 +413,7 @@ export function ArgoProvider({ children }: { children: ReactNode }) {
       { id: 'g1-9', role: 'user' as const, content: 'Managers definitely need to filter by rep. Region would be nice but not required for v1.', timestamp: new Date('2025-03-10T10:05:00') },
       { id: 'g1-10', role: 'assistant' as const, content: 'That\'s a sensible scope for v1. One more thing — do you have a rough timeline in mind, and is there an existing design system we should reference, or is this greenfield?', agentId: 'general', agentName: 'General Agent', timestamp: new Date('2025-03-10T10:05:30') },
       { id: 'g1-11', role: 'user' as const, content: 'We want to ship in 6 weeks. We use Figma and our component library is based on shadcn.', timestamp: new Date('2025-03-10T10:06:00') },
-      { id: 'g1-12', role: 'assistant' as const, content: 'Six weeks is tight but doable for a focused v1. I have enough to write a solid PRD. Let me structure it with an overview, problem statement, user personas, core features, out-of-scope items, and a rough milestone plan.', agentId: 'general', agentName: 'General Agent', timestamp: new Date('2025-03-10T10:06:30') },
+      { id: 'g1-12', role: 'assistant' as const, content: 'Six weeks is tight but doable for a focused v1. I have enough to write a solid PRD. Let me structure it with an overview, problem statement, user personas, core features, out-of-scope items, and a rough milestone plan.', agentId: 'general', agentName: 'General Agent', timestamp: new Date('2025-03-10T10:06:30'), trace: generateTrace('General Agent', '1.0', 'General Assistance', ['Knowledge Retrieval']) },
     ], createdAt: new Date('2025-03-10') },
     { id: 'general-2', name: 'VRD', spaceId: MY_SPACE_ID, messages: [{ id: 'g2-msg', role: 'user' as const, content: 'Create a VRD document.', timestamp: new Date('2025-03-09') }], createdAt: new Date('2025-03-09') },
     { id: 'general-3', name: 'How to Use Lovable', spaceId: MY_SPACE_ID, messages: [{ id: 'g3-msg', role: 'user' as const, content: 'How do I use Lovable?', timestamp: new Date('2025-03-08') }], createdAt: new Date('2025-03-08') },
@@ -436,11 +458,11 @@ export function ArgoProvider({ children }: { children: ReactNode }) {
       { id: 'c3d-5', role: 'user' as const, content: 'We have dbt already. Great Expectations is not in use but the team is familiar with it. Also — the steering committee specifically asked for a contingency plan if the Phase 1 cutover slips past the June deadline.', timestamp: new Date('2025-03-12T09:16:00') },
       { id: 'c3d-6', role: 'assistant' as const, content: 'Good — dbt gives us a solid foundation for schema validation. For the contingency plan: the cleanest option is a defined rollback window (typically 72 hours post-cutover), with the legacy environment kept warm until end of June. If cutover slips, Phase 1 scope narrows to critical pipelines only, non-critical workloads move to Phase 2. I can include a decision tree for the steering committee showing trigger conditions for each contingency. Shall I draft the full document now?', timestamp: new Date('2025-03-12T09:18:00') },
       { id: 'c3d-7', role: 'user' as const, content: 'Yes, go ahead. Include the decision tree and make sure the dbt validation approach is spelled out clearly for the engineers.', timestamp: new Date('2025-03-12T09:19:00') },
-      { id: 'c3d-8', role: 'assistant' as const, content: 'Here\'s the first draft of the mitigation strategy. It covers the top risks with owner assignments, the dbt validation framework, and the contingency decision tree for June deadline slippage.', timestamp: new Date('2025-03-12T09:22:00'), artifactId: 'demo-12' },
+      { id: 'c3d-8', role: 'assistant' as const, content: 'Here\'s the first draft of the mitigation strategy. It covers the top risks with owner assignments, the dbt validation framework, and the contingency decision tree for June deadline slippage.', timestamp: new Date('2025-03-12T09:22:00'), artifactId: 'demo-12', trace: generateTrace('General Agent', '1.0', 'General Assistance', ['Knowledge Retrieval', 'Structured Artifact Generator']) },
       { id: 'c3d-9', role: 'user' as const, content: 'This is solid. A couple of changes: the rollback window should be 48 hours, not 72. And can you add a section on communication protocols — who gets notified and when if something goes wrong during cutover?', timestamp: new Date('2025-03-12T09:35:00') },
-      { id: 'c3d-10', role: 'assistant' as const, content: 'Updated the rollback window to 48 hours throughout. Added a Communication Protocol section covering the incident escalation chain: on-call engineer → migration lead → CTO, with 15-minute check-ins during the cutover window and a war-room Slack channel as the single source of truth. Also added stakeholder notification timelines — executive summary update within 2 hours of any P1 incident.', timestamp: new Date('2025-03-12T09:42:00'), artifactId: 'demo-12' },
+      { id: 'c3d-10', role: 'assistant' as const, content: 'Updated the rollback window to 48 hours throughout. Added a Communication Protocol section covering the incident escalation chain: on-call engineer → migration lead → CTO, with 15-minute check-ins during the cutover window and a war-room Slack channel as the single source of truth. Also added stakeholder notification timelines — executive summary update within 2 hours of any P1 incident.', timestamp: new Date('2025-03-12T09:42:00'), artifactId: 'demo-12', trace: generateTrace('General Agent', '1.0', 'General Assistance', ['Knowledge Retrieval', 'Structured Artifact Generator']) },
       { id: 'c3d-11', role: 'user' as const, content: 'Perfect. One last thing — the VPs asked for a risk heat map. Can you add a visual representation using markdown tables?', timestamp: new Date('2025-03-12T10:05:00') },
-      { id: 'c3d-12', role: 'assistant' as const, content: 'Added a risk heat map as a markdown matrix — likelihood vs. impact, with each risk plotted and colour-coded using severity labels (Critical / High / Medium). The top two risks (pipeline failures and schema incompatibilities) show as Critical. This is the final version — ready to share with the steering committee.', timestamp: new Date('2025-03-12T10:10:00'), artifactId: 'demo-12' },
+      { id: 'c3d-12', role: 'assistant' as const, content: 'Added a risk heat map as a markdown matrix — likelihood vs. impact, with each risk plotted and colour-coded using severity labels (Critical / High / Medium). The top two risks (pipeline failures and schema incompatibilities) show as Critical. This is the final version — ready to share with the steering committee.', timestamp: new Date('2025-03-12T10:10:00'), artifactId: 'demo-12', trace: generateTrace('General Agent', '1.0', 'General Assistance', ['Knowledge Retrieval', 'Structured Artifact Generator']) },
     ] },
   ]);
   const [activeChatId, setActiveChatId] = useState<string | null>(null);
@@ -789,6 +811,7 @@ If Phase 1 cutover has not completed by **June 1, 2025**, the following triggers
 
     setTimeout(() => {
       const result = simulateResponse('general', content);
+      // DEMO ONLY — 3s delay so trace streaming state is visible in prototype
       let newArtifactId: string | undefined;
       if (result.artifact) {
         artifactCounter.current += 1;
@@ -807,14 +830,17 @@ If Phase 1 cutover has not completed by **June 1, 2025**, the following triggers
         setActiveArtifactId(newArtifactId);
         setRightPanelView('artifact');
       }
+      const msgTrace = result.artifact?.trace ?? generateTrace('General Agent', '1.0', 'General Assistance', ['Knowledge Retrieval']);
       const assistantMsg: Message = {
         id: `msg-${Date.now()}-resp`, role: 'assistant', content: result.reply,
+        type: result.isClarification ? 'clarification' : 'message',
+        suggestions: result.suggestions,
         agentId: 'general', agentName: 'General Agent', timestamp: new Date(),
-        artifactId: newArtifactId, trace: result.artifact?.trace,
+        artifactId: newArtifactId, trace: result.isClarification ? undefined : msgTrace,
       };
       setChats(prev => prev.map(c => c.id === activeChatId ? { ...c, messages: [...c.messages, assistantMsg] } : c));
       setIsTyping(false);
-    }, 1500);
+    }, 3000);
   }, [activeChatId, selectedAgentId, activeSpaceId, selectedAgent, chats, spaces]);
 
   const createSpace = useCallback((name: string, description?: string, projectContext?: string, visibility: 'private' | 'shared' = 'private') => {
@@ -897,7 +923,7 @@ If Phase 1 cutover has not completed by **June 1, 2025**, the following triggers
     <ArgoContext.Provider value={{
       spaces, activeSpaceId, chats, activeChatId, artifacts, activeArtifactId, activeFilesSpaceId,
       selectedAgentId, isAdmin, isTyping, rightPanelView, adminTab, centerView, sidebarCollapsed,
-      activeChat, activeArtifact, selectedAgent, spaceArtifacts, allArtifacts,
+      activeChat, activeArtifact, selectedAgent, spaceArtifacts, allArtifacts, skills: SKILLS,
       setActiveSpaceId, setActiveChatId, setActiveArtifactId, setSelectedAgentId,
       setIsAdmin, setRightPanelView, setAdminTab, setCenterView, setSidebarCollapsed,
       sendMessage, createSpace, createChat, renameChat, renameSpace, updateSpace, renameArtifact, openSpaceWorkspace, openFilesPanel, closeFilesPanel, exitSpace, navigateToChat,
