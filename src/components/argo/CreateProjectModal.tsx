@@ -1,6 +1,6 @@
 // Created: 2025-03-23
 import React, { useState } from 'react';
-import { X, ChevronDown, ChevronRight, Globe, Lock, Link2, Check } from 'lucide-react';
+import { X, ChevronDown, ChevronRight, Globe, Lock, Link2, Check, Info } from 'lucide-react';
 import { useArgo } from '@/context/ArgoContext';
 import { cn } from '@/lib/utils';
 
@@ -150,8 +150,18 @@ export function CreateProjectModal({ onClose, editSpace }: {
               </div>
             )}
 
-            {/* Link pill — shown whenever shareable is on (toggled or already shared) */}
-            {isShared && (
+            {/* Info callout — link not yet available during creation */}
+            {isShared && !editSpace?.shareCode && (
+              <div className="mt-2 flex items-start gap-2 px-3 py-2.5 rounded-lg bg-secondary/40 border border-border animate-fade-in">
+                <Info className="w-3.5 h-3.5 text-muted-foreground mt-0.5 shrink-0" />
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  A unique invite link will be generated once the project is created. You'll be able to copy and share it from the project page.
+                </p>
+              </div>
+            )}
+
+            {/* Existing copy button — edit mode only */}
+            {isShared && editSpace?.shareCode && (
               <button
                 type="button"
                 onClick={handleCopyLink}
@@ -159,11 +169,11 @@ export function CreateProjectModal({ onClose, editSpace }: {
                 title="Copy project link"
               >
                 <span className="text-[11px] font-mono text-muted-foreground truncate">
-                  argo.app/invite/{linkCode}
+                  argo.app/invite/{editSpace.shareCode}
                 </span>
                 <span className="flex items-center gap-1 text-xs text-muted-foreground group-hover/copy:text-foreground transition-colors shrink-0 ml-3">
                   {linkCopied ? <Check className="w-3 h-3 text-primary" /> : <Link2 className="w-3 h-3" />}
-                  {editSpace?.shareCode ? (linkCopied ? 'Copied' : 'Copy') : 'Available after save'}
+                  {linkCopied ? 'Copied' : 'Copy'}
                 </span>
               </button>
             )}
