@@ -130,13 +130,28 @@ The core pattern used everywhere for lists.
 
 ## Buttons
 
-| Type | Classes |
-|------|---------|
-| Primary CTA | `bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg px-3 py-1.5 text-sm font-medium` |
-| Secondary/outlined | `border border-border text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg px-3 py-1.5 text-sm` |
-| Ghost/text | `text-muted-foreground hover:text-foreground transition-colors` |
-| Destructive | `text-destructive hover:bg-destructive/10 rounded-lg` |
-| Send button | `bg-primary text-primary-foreground rounded-lg p-2 hover:bg-primary/90 disabled:opacity-40` |
+### 3-Tier Hierarchy Rule
+
+Every screen or section has **one primary action** — the single most important thing you want the user to do. Everything else is secondary or ghost.
+
+> Ask: "What is the ONE thing I want the user to do here?" → that's Primary. Everything supporting it → Secondary. Cancel/dismiss → Ghost.
+
+| Tier | When to use | Classes |
+|------|-------------|---------|
+| **Primary** | One per context. The main CTA — New Chat, Create Project, Send, Save, Join (inside modal). | `bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg px-3 py-1.5 text-sm font-medium` |
+| **Secondary** | Supporting actions — important but not the main one. Upload, Edit, Join Project (on dashboard), Copy Link. | `border border-border text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg px-3 py-1.5 text-sm` |
+| **Ghost** | Dismiss/cancel only. Never use for anything that creates or confirms. | `text-muted-foreground hover:text-foreground transition-colors` |
+| **Destructive** | Irreversible actions (delete). | `text-destructive hover:bg-destructive/10 rounded-lg` |
+| **Send** | Chat input send button. | `bg-primary text-primary-foreground rounded-lg p-2 hover:bg-primary/90 disabled:opacity-40` |
+
+**Examples by screen:**
+
+| Screen | Secondary | Primary |
+|--------|-----------|---------|
+| Projects dashboard | Join Project | Create Project |
+| Project page | Upload · Edit | New Chat |
+| Files panel | — | Upload (only action in panel) |
+| Modal (confirm) | Cancel (ghost) | Confirm action |
 
 ---
 
