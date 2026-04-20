@@ -515,7 +515,7 @@ export function ChatView() {
             <div className="flex-1 flex flex-col justify-center px-4 py-6 w-full animate-fade-in">
               <div className="w-full max-w-xl mx-auto">
                 <div className="text-center mb-6">
-                  <h2 className="text-2xl font-bold text-foreground mb-1">Hello, Liza.</h2>
+                  <h2 className="text-2xl font-bold text-foreground mb-1">Hello, Pranav.</h2>
                   <p className="text-sm text-muted-foreground">What would you like to work on today?</p>
                 </div>
                 <div className="bg-card border border-border rounded-xl focus-within:ring-1 focus-within:ring-ring focus-within:border-primary/50 transition-all shadow-sm">
