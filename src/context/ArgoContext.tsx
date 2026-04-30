@@ -407,6 +407,8 @@ interface ArgoContextType {
   spaceArtifacts: Artifact[];
   allArtifacts: Artifact[];
   skills: Skill[];
+  activeSkillId: string | null;
+  setActiveSkillId: (id: string | null) => void;
 
   setActiveSpaceId: (id: string) => void;
   setActiveChatId: (id: string | null) => void;
