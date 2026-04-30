@@ -10,10 +10,64 @@ const generateShareCode = () => Math.random().toString(36).slice(2, 6) + Math.ra
 
 // DEMO ONLY — remove when connecting backend
 export const SKILLS: Skill[] = [
-  { id: 'skill-proposal', name: 'Proposal generator', description: 'Generates structured proposal outlines for client engagements.', scope: 'org' },
-  { id: 'skill-sow', name: 'SOW drafter', description: 'Drafts statements of work with deliverables and terms.', scope: 'org' },
-  { id: 'skill-exec-summary', name: 'Executive summary', description: 'Creates concise executive summaries for leadership.', scope: 'org' },
-  { id: 'skill-comparison', name: 'Company comparison', description: 'Generates structured company comparison tables.', scope: 'org' },
+  {
+    id: 'skill-proposal',
+    name: 'Proposal generator',
+    description: 'Generates structured proposal outlines for client engagements, including phases, team composition, and investment summaries.',
+    scope: 'org',
+    instructions: 'When generating a proposal:\n1. Always start with an executive summary.\n2. Break work into clear phases with durations.\n3. Include a team composition table.\n4. Provide a transparent investment summary.\n5. End with concrete next steps.',
+    tools: [
+      { id: 'knowledge-retrieval', name: 'Knowledge Retrieval' },
+      { id: 'structured-gen', name: 'Structured Artifact Generator' },
+    ],
+    references: [
+      { title: 'Proposal template v3' },
+      { title: 'Pricing guide 2024' },
+      { title: 'Client engagement playbook' },
+    ],
+    assets: [
+      { name: 'proposal-template.md' },
+      { name: 'pricing-tiers.xlsx' },
+    ],
+  },
+  {
+    id: 'skill-sow',
+    name: 'SOW drafter',
+    description: 'Drafts statements of work with deliverables, acceptance criteria, and commercial terms.',
+    scope: 'org',
+    instructions: 'Always include: scope of work, numbered deliverables with acceptance criteria, assumptions, timeline, and commercial terms.',
+    tools: [
+      { id: 'knowledge-retrieval', name: 'Knowledge Retrieval' },
+      { id: 'structured-gen', name: 'Structured Artifact Generator' },
+    ],
+    references: [{ title: 'SOW template v2' }, { title: 'Rate card 2024' }],
+    assets: [{ name: 'sow-template.docx' }],
+  },
+  {
+    id: 'skill-exec-summary',
+    name: 'Executive summary',
+    description: 'Creates concise executive summaries for leadership audiences.',
+    scope: 'group',
+    group: 'Pre-Sales',
+    instructions: 'Keep summaries under one page. Lead with strategic context, then recommended approach, then investment and ROI.',
+    tools: [{ id: 'structured-gen', name: 'Structured Artifact Generator' }],
+    references: [{ title: 'Executive briefing template' }],
+    assets: [],
+  },
+  {
+    id: 'skill-comparison',
+    name: 'Company comparison',
+    description: 'Generates structured company comparison tables for competitive analysis.',
+    scope: 'group',
+    group: 'Strategy',
+    instructions: 'Compare on industry, HQ, revenue, employees, key products, and recent news. Use a markdown table.',
+    tools: [
+      { id: 'web-search', name: 'Web Search' },
+      { id: 'structured-gen', name: 'Structured Artifact Generator' },
+    ],
+    references: [{ title: 'Competitive intelligence handbook' }],
+    assets: [{ name: 'comparison-template.md' }],
+  },
 ];
 
 export const TOOLS: Tool[] = [
@@ -353,6 +407,8 @@ interface ArgoContextType {
   spaceArtifacts: Artifact[];
   allArtifacts: Artifact[];
   skills: Skill[];
+  activeSkillId: string | null;
+  setActiveSkillId: (id: string | null) => void;
 
   setActiveSpaceId: (id: string) => void;
   setActiveChatId: (id: string | null) => void;
@@ -781,6 +837,7 @@ If Phase 1 cutover has not completed by **June 1, 2025**, the following triggers
     return () => clearTimeout(timer);
   }, []);
   const [rightPanelView, setRightPanelView] = useState<RightPanelView>('empty');
+  const [activeSkillId, setActiveSkillId] = useState<string | null>(null);
   const [adminTab, setAdminTab] = useState<AdminTab>('agents');
   const [centerView, setCenterView] = useState<CenterView>('chat');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -924,6 +981,7 @@ If Phase 1 cutover has not completed by **June 1, 2025**, the following triggers
       spaces, activeSpaceId, chats, activeChatId, artifacts, activeArtifactId, activeFilesSpaceId,
       selectedAgentId, isAdmin, isTyping, rightPanelView, adminTab, centerView, sidebarCollapsed,
       activeChat, activeArtifact, selectedAgent, spaceArtifacts, allArtifacts, skills: SKILLS,
+      activeSkillId, setActiveSkillId,
       setActiveSpaceId, setActiveChatId, setActiveArtifactId, setSelectedAgentId,
       setIsAdmin, setRightPanelView, setAdminTab, setCenterView, setSidebarCollapsed,
       sendMessage, createSpace, createChat, renameChat, renameSpace, updateSpace, renameArtifact, openSpaceWorkspace, openFilesPanel, closeFilesPanel, exitSpace, navigateToChat,

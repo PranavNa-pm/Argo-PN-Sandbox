@@ -20,11 +20,29 @@ export interface Agent {
   capabilities: Capability[];
 }
 
+export interface SkillTool {
+  id: string;
+  name: string;
+}
+
+export interface SkillReference {
+  title: string;
+}
+
+export interface SkillAsset {
+  name: string;
+}
+
 export interface Skill {
   id: string;
   name: string;
   description: string;
-  scope: 'org' | 'group' | 'personal';
+  scope: 'org' | 'group';
+  group?: string;
+  instructions?: string;
+  tools?: SkillTool[];
+  references?: SkillReference[];
+  assets?: SkillAsset[];
 }
 
 export interface Message {
@@ -105,6 +123,6 @@ export interface Space {
   shareCode?: string; // permanent unique token — never changes even if name/description changes
 }
 
-export type CenterView = 'chat' | 'config' | 'artifacts-table' | 'space-workspace' | 'new-space' | 'projects';
-export type RightPanelView = 'empty' | 'artifact' | 'files';
+export type CenterView = 'chat' | 'config' | 'artifacts-table' | 'space-workspace' | 'new-space' | 'projects' | 'skills';
+export type RightPanelView = 'empty' | 'artifact' | 'files' | 'skill';
 export type AdminTab = 'agents' | 'prompts' | 'groups';
