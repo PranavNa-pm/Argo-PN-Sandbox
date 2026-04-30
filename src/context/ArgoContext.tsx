@@ -837,6 +837,7 @@ If Phase 1 cutover has not completed by **June 1, 2025**, the following triggers
     return () => clearTimeout(timer);
   }, []);
   const [rightPanelView, setRightPanelView] = useState<RightPanelView>('empty');
+  const [activeSkillId, setActiveSkillId] = useState<string | null>(null);
   const [adminTab, setAdminTab] = useState<AdminTab>('agents');
   const [centerView, setCenterView] = useState<CenterView>('chat');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -980,6 +981,7 @@ If Phase 1 cutover has not completed by **June 1, 2025**, the following triggers
       spaces, activeSpaceId, chats, activeChatId, artifacts, activeArtifactId, activeFilesSpaceId,
       selectedAgentId, isAdmin, isTyping, rightPanelView, adminTab, centerView, sidebarCollapsed,
       activeChat, activeArtifact, selectedAgent, spaceArtifacts, allArtifacts, skills: SKILLS,
+      activeSkillId, setActiveSkillId,
       setActiveSpaceId, setActiveChatId, setActiveArtifactId, setSelectedAgentId,
       setIsAdmin, setRightPanelView, setAdminTab, setCenterView, setSidebarCollapsed,
       sendMessage, createSpace, createChat, renameChat, renameSpace, updateSpace, renameArtifact, openSpaceWorkspace, openFilesPanel, closeFilesPanel, exitSpace, navigateToChat,
